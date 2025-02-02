@@ -1,7 +1,7 @@
 {
-  "name": "Mindustry Database",
-  "author": "LSN",
-  "main": "org.lettsn.PlayerDatabase.Main",
-  "description": "A plugin that holds data and information about a player.",
+  "name": "Moderation System",
+  "author": "net.ddns.mindustry",
+  "main": "net.ddns.mindustry.moderation_system.Main",
+  "description": "A plugin for moderating Mindustry.",
   "version": "1.0.0"
 }
