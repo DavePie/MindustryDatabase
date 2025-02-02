@@ -1,7 +1,7 @@
 {
-  "name": "Moderation System",
+  "name": "Mindustry Database",
   "author": "net.ddns.mindustry",
-  "main": "net.ddns.mindustry.moderation_system.Main",
+  "main": "net.ddns.mindustry.database.plugin.Main",
   "description": "A plugin for moderating Mindustry.",
   "version": "1.0.0"
 }

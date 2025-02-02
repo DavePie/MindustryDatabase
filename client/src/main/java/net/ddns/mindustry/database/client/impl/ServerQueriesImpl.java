@@ -20,4 +20,20 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
                 .where(SERVER.IP_ADDRESS.eq(ip).and(SERVER.PORT.eq(uPort)))
                 .fetchOptionalInto(Server.class);
     }
+
+    @Override
+    public void add(String ip, int port, String name) {
+        Objects.requireNonNull(ip);
+        final UShort uPort = UShort.valueOf(port);
+
+        if (find(ip, port).isPresent()) {
+            return;
+        }
+
+        dsl.insertInto(SERVER)
+                .set(SERVER.IP_ADDRESS, ip)
+                .set(SERVER.PORT, uPort)
+                .set(SERVER.NAME, name)
+                .execute();
+    }
 }
