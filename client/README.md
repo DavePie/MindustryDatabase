@@ -14,6 +14,7 @@ dependencies {
 ```
 
 # JOOQ Code Generation
+### Setting up the database.
 The file `jooq.properties` must be created in the module root having the following properties:
 ```properties
 url=jdbc:mariadb://[your-jdbc-host]:[port]/mindustry_database
@@ -21,5 +22,8 @@ user=database_user
 password=database_password
 ```
 *The database creation, and user permissions, must be done manually.*
+
+### Generating the classes.
+Once the database is ready, to generate the JOOQ schema classes, run `gradle client:jooqCodegen`.
 
 
