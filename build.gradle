@@ -19,6 +19,8 @@ ext{
     //the build number that this plugin is made for
     mindustryVersion = 'v145'
     jabelVersion = "93fde537c7"
+
+    jooqVersion = "3.19.16"
 }
 
 tasks.withType(Jar).configureEach {
@@ -32,6 +34,8 @@ dependencies{
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 //    implementation 'org.xerial:sqlite-jdbc:3.30.1'
     implementation project(':client')
+
+    implementation "org.jooq:jooq:$jooqVersion"
 }
 
 jar{

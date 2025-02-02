@@ -23,6 +23,17 @@ This doesn't provide any moderation commands itself. However, the database does 
 6. Start or restart the server
 7. Type in the respective config values for `url`, `user`, and `password` via `config CONFIG PARAMETER`
 8. Run the `reconnect` command.
+9. Register the server to the database via the `register` command (if you haven't run the `update-ip` command).
+
+# Configs
+- `server-ip` - The IP of the Mindustry server. This is optional and should only be changed when necessary. Default is
+`127.0.0.1`. This shouldn't be changed directly unless you know what you're doing. Change this via the `update-ip`
+command.
+- `url` - The URL of the database.
+- `user` - The database user to authenticate as.
+- `password` - The password of the database user.
+- `session-duration` - The maximum duration of a player session. Defaults to 12 hours. If the session exceeds the
+maximum duration, then the user's session will become invalid when the user joins.
 
 # Database Schema
 For the database schema, see [this file](client/tables.sql).
