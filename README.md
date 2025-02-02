@@ -6,7 +6,7 @@ A Mindustry plugin for saving and handling data about players.
 
 
 # Keep in mind
-This doesn't provide any moderation features. It'll just run a Mindustry database.
+This doesn't provide any moderation commands itself. However, the database does provide methods for moderation.
 
 # Installation
 ## Supports
