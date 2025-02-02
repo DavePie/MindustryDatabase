@@ -6,6 +6,7 @@ import net.ddns.mindustry.database.client.SecurityConfig;
 import net.ddns.mindustry.database.client.ServerQueries;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
+import org.mariadb.jdbc.Driver;
 import java.util.Objects;
 
 public final class DatabaseImpl implements Database {
@@ -15,6 +16,11 @@ public final class DatabaseImpl implements Database {
     private final ServerQueries server;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
+
+        try { Class.forName(Driver.class.getName());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("The mariadb driver could not be loaded.", e);
+        }
 
         final DSLContext dsl = DSL.using(Objects.requireNonNull(url),
                 Objects.requireNonNull(username),
