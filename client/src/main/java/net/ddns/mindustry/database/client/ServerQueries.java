@@ -27,7 +27,7 @@ public interface ServerQueries {
      * @param newPort The new port.
      * @param newName The new name.
      */
-    void update(Server server, String newIP, int newPort, String newName);
+    void update(Server server, String newIP, Integer newPort, String newName);
 
     /**
      * Runs a heartbeat on the server.
