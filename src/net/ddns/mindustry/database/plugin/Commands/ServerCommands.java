@@ -6,7 +6,6 @@ import mindustry.net.Administration;
 import net.ddns.mindustry.database.plugin.Main;
 import net.ddns.mindustry.database.plugin.Utilities;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-import org.jooq.Allow;
 
 import java.util.Optional;
 
@@ -23,9 +22,9 @@ public class ServerCommands {
                 ServerCommands::registerServer);
         handler.register("deregister-server", "[id]", "Deregisters the server from the database.",
                 ServerCommands::deregisterServer);
-        handler.register("update-ip", "<new ip>", "Updates the IP of the server. This will edit" +
+        handler.register("update-ip", "<new-ip>", "Updates the IP of the server. This will edit" +
                         " both the configuration and the database entry.", ServerCommands::updateIP);
-        handler.register("update-port", "<new port>", "Updates the port of the server. This will " +
+        handler.register("update-port", "<new-port>", "Updates the port of the server. This will " +
                 "edit both the configuration and the database entry.", ServerCommands::updatePort);
     }
 
