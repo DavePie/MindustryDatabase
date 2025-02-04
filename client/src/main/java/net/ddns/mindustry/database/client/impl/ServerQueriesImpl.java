@@ -4,12 +4,7 @@ import net.ddns.mindustry.database.client.ServerQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import org.jooq.types.UShort;
-
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -46,17 +41,10 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
     public void update(Server server, String newIP, Integer newPort, String newName) {
         Objects.requireNonNull(server);
 
-        newIP = Objects.requireNonNullElse(newIP, server.ipAddress());
-        newPort = Objects.requireNonNullElse(newPort, server.port().intValue());
-        newName = Objects.requireNonNullElse(newName, server.name());
-
-        // I'm not trusting that the valueOf method is null safe.
-        UShort uNewPort = UShort.valueOf(newPort);
-
         dsl.update(SERVER)
-                .set(SERVER.IP_ADDRESS, newIP)
-                .set(SERVER.PORT, uNewPort)
-                .set(SERVER.NAME, newName)
+                .set(SERVER.IP_ADDRESS, newIP == null ? server.ipAddress() : newIP)
+                .set(SERVER.PORT, newPort == null ? server.port() : UShort.valueOf(newPort))
+                .set(SERVER.NAME, newName == null ? server.name() : newName)
                 .where(SERVER.ID.eq(server.id()))
                 .execute();
     }
