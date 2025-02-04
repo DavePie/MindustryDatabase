@@ -35,5 +35,13 @@ command.
 - `session-duration` - The maximum duration of a player session. Defaults to 12 hours. If the session exceeds the
 maximum duration, then the user's session will become invalid when the user joins.
 
+# Commands
+- `reconnect` - Reconnects the Mindustry server to the database.
+- `register-server <name>` - Registers the server into the database.
+- `deregister-server [id]` - Deregisters the server from the database. If an ID is provided, then it will deregister
+that specific server.
+- `update-ip <new ip>` - Updates the IP of the database entry for the server.
+- `update-port <new port>` - Updates the port of the database entry for the server.
+
 # Database Schema
 For the database schema, see [this file](client/tables.sql).
