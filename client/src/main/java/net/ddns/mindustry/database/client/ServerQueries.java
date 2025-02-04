@@ -5,6 +5,13 @@ import java.util.Optional;
 
 public interface ServerQueries {
     /**
+     * Gets a server via its ID.
+     * @param id The ID of the server.
+     * @return An optional that may contain the server object.
+     */
+    Optional<Server> get(int id);
+
+    /**
      * Finds a server in the database.
      * @param ip The IP of the server to find.
      * @param port The port of the server to find.

@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.ServerQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -10,6 +11,15 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
+    @Override
+    public Optional<Server> get(int id) {
+        UInteger uID = UInteger.valueOf(id);
+
+        return dsl.selectFrom(SERVER)
+                .where(SERVER.ID.eq(uID))
+                .fetchOptionalInto(Server.class);
+    }
+
     @Override
     public Optional<Server> find(String ip, int port) {
 
