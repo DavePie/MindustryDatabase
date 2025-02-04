@@ -1,9 +1,6 @@
 package net.ddns.mindustry.database.client.impl;
 
-import net.ddns.mindustry.database.client.AccountQueries;
-import net.ddns.mindustry.database.client.Database;
-import net.ddns.mindustry.database.client.SecurityConfig;
-import net.ddns.mindustry.database.client.ServerQueries;
+import net.ddns.mindustry.database.client.*;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.mariadb.jdbc.Driver;
@@ -12,8 +9,9 @@ import java.util.Objects;
 public final class DatabaseImpl implements Database {
 
     private final SecurityConfig config;
-    private final AccountQueries auth;
-    private final ServerQueries server;
+    private final AccountQueriesImpl auth;
+    private final ServerQueriesImpl server;
+    private final PunishmentQueriesImpl punishment;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
 
@@ -29,6 +27,7 @@ public final class DatabaseImpl implements Database {
         this.config = Objects.requireNonNull(config);
         this.auth = new AccountQueriesImpl(dsl, config);
         this.server = new ServerQueriesImpl(dsl);
+        this.punishment = new PunishmentQueriesImpl(dsl, auth);
     }
 
     @Override
@@ -44,5 +43,10 @@ public final class DatabaseImpl implements Database {
     @Override
     public ServerQueries server() {
         return server;
+    }
+
+    @Override
+    public PunishmentQueries punishment() {
+        return punishment;
     }
 }

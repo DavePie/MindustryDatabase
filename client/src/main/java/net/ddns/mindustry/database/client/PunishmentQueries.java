@@ -19,13 +19,17 @@ public interface PunishmentQueries {
 
     Status warn(String punishedUsername, String staffUsername, String reason, Server server);
 
-    Status unban(Ban ban, boolean isAccepted, String message);
-
-    Status unban(Ban ban, boolean isAccepted);
+    UnbanStatus unban(Ban ban, String staffUsername);
 
     enum Status {
         USERNAME_NOT_FOUND,
         STAFF_NOT_FOUND,
+        OK
+    }
+
+    enum UnbanStatus {
+        STAFF_NOT_FOUND,
+        ALREADY_UNBANNED,
         OK
     }
 }

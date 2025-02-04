@@ -13,4 +13,6 @@ public interface Database {
     AccountQueries auth();
 
     ServerQueries server();
+
+    PunishmentQueries punishment();
 }
