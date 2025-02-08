@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS account(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id            SERIAL       PRIMARY KEY,
     username      VARCHAR(15)  NOT NULL UNIQUE, -- Anything bigger than 15 is quite long.
     display_name  TINYTEXT     NOT NULL,
     creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
@@ -20,45 +20,45 @@ CREATE TABLE IF NOT EXISTS account(
 -- TODO Server authorization based on user role.
 CREATE TABLE IF NOT EXISTS server(
 
-    id               INT UNSIGNED      NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    ip_address       INET4             NOT NULL,
-    port             SMALLINT UNSIGNED NOT NULL,
-    name             TINYTEXT          NOT NULL,
+    id               SERIAL      PRIMARY KEY,
+    ip_address       INET4       NOT NULL,
+    port             SMALLINT    NOT NULL,
+    name             TINYTEXT    NOT NULL,
     -- Last heartbeat available used in case the server goes offline.
-    heartbeat        DATETIME(3)       NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    heartbeat        DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
     -- The period of the heartbeat in milliseconds.
-    heartbeat_period INT UNSIGNED      NOT NULL DEFAULT 5000,
+    heartbeat_period INT         NOT NULL DEFAULT 5000,
 
     CONSTRAINT u_server_ip_port UNIQUE(ip_address, port)
 );
 
 CREATE TABLE IF NOT EXISTS login(
 
-    id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id INT UNSIGNED NOT NULL,
-    ip_address INET4        NOT NULL,
-    login_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id         SERIAL      PRIMARY KEY,
+    account_id INT         NOT NULL,
+    ip_address INET4       NOT NULL,
+    login_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_login_user FOREIGN KEY(account_id) REFERENCES account(id)
 );
 
 CREATE TABLE IF NOT EXISTS account_session(
 
-    id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id      INT UNSIGNED NOT NULL UNIQUE, -- There can be only one session at a time.
-    session_cookie  BINARY(32)   NOT NULL UNIQUE,
-    expiration_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id              SERIAL      PRIMARY KEY,
+    account_id      INT         NOT NULL UNIQUE, -- There can be only one session at a time.
+    session_cookie  BINARY(32)  NOT NULL UNIQUE,
+    expiration_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_account_session FOREIGN KEY(account_id) REFERENCES account(id)
 );
 
 CREATE TABLE IF NOT EXISTS server_join(
 
-    id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id INT UNSIGNED NOT NULL,
-    server_id  INT UNSIGNED NOT NULL,
-    join_date  DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
-    leave_date DATETIME(3)  NULL     DEFAULT NULL,
+    id         SERIAL      PRIMARY KEY,
+    account_id INT         NOT NULL,
+    server_id  INT         NOT NULL,
+    join_date  DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    leave_date DATETIME(3) NULL     DEFAULT NULL,
 
     CONSTRAINT fk_server_join_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_server_join_server FOREIGN KEY(server_id)  REFERENCES server(id)
@@ -66,12 +66,12 @@ CREATE TABLE IF NOT EXISTS server_join(
 
 CREATE TABLE IF NOT EXISTS report(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id    INT UNSIGNED NOT NULL,
-    reported_id   INT UNSIGNED NOT NULL,
-    short_reason  TINYTEXT     NOT NULL,
-    long_reason   TEXT         NOT NULL DEFAULT '',
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    account_id    INT         NOT NULL,
+    reported_id   INT         NOT NULL,
+    short_reason  TINYTEXT    NOT NULL,
+    long_reason   TEXT        NOT NULL DEFAULT '',
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_report_account  FOREIGN KEY(account_id)  REFERENCES account(id),
     CONSTRAINT fk_report_reported FOREIGN KEY(reported_id) REFERENCES account(id)
@@ -79,12 +79,12 @@ CREATE TABLE IF NOT EXISTS report(
 
 CREATE TABLE IF NOT EXISTS report_reply(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    report_id     INT UNSIGNED NOT NULL UNIQUE,
-    staff_id      INT UNSIGNED NOT NULL,
-    accepted      BOOLEAN      NOT NULL,
-    message       TEXT         NOT NULL DEFAULT '',
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    report_id     INT         NOT NULL UNIQUE,
+    staff_id      INT         NOT NULL,
+    accepted      BOOLEAN     NOT NULL,
+    message       TEXT        NOT NULL DEFAULT '',
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_report_reply_staff  FOREIGN KEY(staff_id)  REFERENCES account(id),
     CONSTRAINT fk_report_reply_report FOREIGN KEY(report_id) REFERENCES report(id) ON DELETE CASCADE
@@ -92,17 +92,17 @@ CREATE TABLE IF NOT EXISTS report_reply(
 
 CREATE TABLE IF NOT EXISTS ban(
 
-    id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id              SERIAL      PRIMARY KEY,
     -- Random value used to search for this ban.
-    uuid            BIGINT       NOT NULL UNIQUE,
-    account_id      INT UNSIGNED NOT NULL,
-    staff_id        INT UNSIGNED NOT NULL,
-    server_id       INT UNSIGNED NOT NULL,
-    reason          TEXT         NOT NULL,
-    handled         BOOLEAN      NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
-    creation_date   DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    uuid            BIGINT      NOT NULL UNIQUE,
+    account_id      INT         NOT NULL,
+    staff_id        INT         NOT NULL,
+    server_id       INT         NOT NULL,
+    reason          TEXT        NOT NULL,
+    handled         BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
+    creation_date   DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
     -- Null for bans that are permanent.
-    expiration_date DATETIME(3)  NULL,
+    expiration_date DATETIME(3) NULL,
 
     CONSTRAINT fk_ban_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_ban_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
@@ -111,10 +111,10 @@ CREATE TABLE IF NOT EXISTS ban(
 
 CREATE TABLE IF NOT EXISTS unban(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    ban_id        INT UNSIGNED NOT NULL UNIQUE,
-    staff_id      INT UNSIGNED NOT NULL,
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    ban_id        INT         NOT NULL UNIQUE,
+    staff_id      INT         NOT NULL,
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_unban_ban   FOREIGN KEY(ban_id)   REFERENCES ban(id),
     CONSTRAINT fk_unban_staff FOREIGN KEY(staff_id) REFERENCES account(id)
@@ -122,13 +122,13 @@ CREATE TABLE IF NOT EXISTS unban(
 
 CREATE TABLE IF NOT EXISTS kick(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id    INT UNSIGNED NOT NULL,
-    staff_id      INT UNSIGNED NOT NULL,
-    server_id     INT UNSIGNED NOT NULL,
-    reason        TEXT         NOT NULL,
-    handled       BOOLEAN      NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    account_id    INT         NOT NULL,
+    staff_id      INT         NOT NULL,
+    server_id     INT         NOT NULL,
+    reason        TEXT        NOT NULL,
+    handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_kick_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_kick_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
@@ -137,13 +137,13 @@ CREATE TABLE IF NOT EXISTS kick(
 
 CREATE TABLE IF NOT EXISTS warn(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id    INT UNSIGNED NOT NULL,
-    staff_id      INT UNSIGNED NOT NULL,
-    server_id     INT UNSIGNED NOT NULL,
-    reason        TEXT         NOT NULL,
-    handled       BOOLEAN      NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    account_id    INT         NOT NULL,
+    staff_id      INT         NOT NULL,
+    server_id     INT         NOT NULL,
+    reason        TEXT        NOT NULL,
+    handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_warn_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_warn_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
@@ -152,13 +152,13 @@ CREATE TABLE IF NOT EXISTS warn(
 
 CREATE TABLE IF NOT EXISTS mute(
 
-    id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id      INT UNSIGNED NOT NULL,
-    staff_id        INT UNSIGNED NOT NULL,
-    server_id       INT UNSIGNED NOT NULL,
-    reason          TEXT         NOT NULL,
-    creation_date   DATETIME(3)  NOT NULL,
-    expiration_date DATETIME(3)  NOT NULL,
+    id              SERIAL      PRIMARY KEY,
+    account_id      INT         NOT NULL,
+    staff_id        INT         NOT NULL,
+    server_id       INT         NOT NULL,
+    reason          TEXT        NOT NULL,
+    creation_date   DATETIME(3) NOT NULL,
+    expiration_date DATETIME(3) NOT NULL,
 
     CONSTRAINT fk_mute_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_mute_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
@@ -167,11 +167,11 @@ CREATE TABLE IF NOT EXISTS mute(
 
 CREATE TABLE IF NOT EXISTS ban_appeal(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id    INT UNSIGNED NOT NULL,
-    ban_id        INT UNSIGNED NOT NULL,
-    message       TEXT         NOT NULL,
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    account_id    INT         NOT NULL,
+    ban_id        INT         NOT NULL,
+    message       TEXT        NOT NULL,
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_ban_appeal_account FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_ban_appeal_ban     FOREIGN KEY(ban_id)     REFERENCES ban(id)
@@ -179,12 +179,12 @@ CREATE TABLE IF NOT EXISTS ban_appeal(
 
 CREATE TABLE IF NOT EXISTS ban_appeal_reply(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    ban_appeal_id INT UNSIGNED NOT NULL,
-    staff_id      INT UNSIGNED NOT NULL,
-    accepted      BOOLEAN      NOT NULL,
-    message       TEXT         NOT NULL DEFAULT '',
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    ban_appeal_id INT         NOT NULL,
+    staff_id      INT         NOT NULL,
+    accepted      BOOLEAN     NOT NULL,
+    message       TEXT        NOT NULL DEFAULT '',
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_ban_appeal_reply_ban   FOREIGN KEY(ban_appeal_id) REFERENCES ban_appeal(id),
     CONSTRAINT fk_ban_appeal_reply_staff FOREIGN KEY(staff_id)      REFERENCES account(id)
@@ -192,37 +192,37 @@ CREATE TABLE IF NOT EXISTS ban_appeal_reply(
 
 CREATE TABLE IF NOT EXISTS ip_blacklist(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    staff_id      INT UNSIGNED NOT NULL,
-    ip_address    INET4        NOT NULL UNIQUE,
-    reason        TEXT         NOT NULL DEFAULT '',
-    creation_date DATETIME(3)  NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    id            SERIAL      PRIMARY KEY,
+    staff_id      INT         NOT NULL,
+    ip_address    INET4       NOT NULL UNIQUE,
+    reason        TEXT        NOT NULL DEFAULT '',
+    creation_date DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
 
     CONSTRAINT fk_ip_blacklist_staff FOREIGN KEY(staff_id) REFERENCES account(id)
 );
 
 CREATE TABLE IF NOT EXISTS role(
 
-    id       INT UNSIGNED     NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name     TINYTEXT         NOT NULL,
+    id       SERIAL      PRIMARY KEY,
+    name     TINYTEXT    NOT NULL,
     -- The order of which the roles are displayed, smallest first.
-    priority TINYINT UNSIGNED NOT NULL,
-    symbol   VARCHAR(16)      NOT NULL,
-    color    CHAR(8)          NOT NULL
+    priority TINYINT     NOT NULL,
+    symbol   VARCHAR(16) NOT NULL,
+    color    CHAR(8)     NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS permission(
 
-    id       INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id       SERIAL   PRIMARY KEY,
     -- Lowercase with - as space separators.
-    property TINYTEXT     NOT NULL UNIQUE
+    property TINYTEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS account_role(
 
-    id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    account_id INT UNSIGNED NOT NULL,
-    role_id    INT UNSIGNED NOT NULL,
+    id         SERIAL PRIMARY KEY,
+    account_id INT    NOT NULL,
+    role_id    INT    NOT NULL,
 
     CONSTRAINT fk_roles_user FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE
@@ -230,9 +230,9 @@ CREATE TABLE IF NOT EXISTS account_role(
 
 CREATE TABLE IF NOT EXISTS role_permission(
 
-    id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    role_id       INT UNSIGNED NOT NULL,
-    permission_id INT UNSIGNED NOT NULL,
+    id            SERIAL PRIMARY KEY,
+    role_id       INT    NOT NULL,
+    permission_id INT    NOT NULL,
 
     CONSTRAINT fk_role       FOREIGN KEY(role_id)       REFERENCES role(id)       ON DELETE CASCADE,
     CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES permission(id) ON DELETE CASCADE
