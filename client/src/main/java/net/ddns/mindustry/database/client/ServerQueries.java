@@ -1,6 +1,8 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface ServerQueries {
@@ -18,6 +20,8 @@ public interface ServerQueries {
      * @return An optional that may contain the server object.
      */
     Optional<Server> find(String ip, int port);
+
+    List<Server> getAll();
 
     /**
      * Adds a server entry to the database.

@@ -6,6 +6,7 @@ import org.jooq.DSLContext;
 import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -29,6 +30,12 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
         return dsl.selectFrom(SERVER)
                 .where(SERVER.IP_ADDRESS.eq(ip).and(SERVER.PORT.eq(uPort)))
                 .fetchOptionalInto(Server.class);
+    }
+
+    @Override
+    public List<Server> getAll() {
+        return dsl.selectFrom(SERVER)
+                .fetchInto(Server.class);
     }
 
     @Override
