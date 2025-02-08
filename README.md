@@ -42,6 +42,7 @@ maximum duration, then the user's session will become invalid when the user join
 that specific server.
 - `update-ip <new ip>` - Updates the IP of the database entry for the server.
 - `update-port <new port>` - Updates the port of the database entry for the server.
+- `list-servers` - Lists all the servers in the database.
 
 # Database Schema
 For the database schema, see [this file](client/tables.sql).

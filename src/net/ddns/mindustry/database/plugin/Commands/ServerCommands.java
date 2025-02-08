@@ -7,6 +7,7 @@ import net.ddns.mindustry.database.plugin.Main;
 import net.ddns.mindustry.database.plugin.Utilities;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 
+import java.util.List;
 import java.util.Optional;
 
 import static net.ddns.mindustry.database.plugin.Configs.configServerIP;
@@ -26,6 +27,8 @@ public class ServerCommands {
                         " both the configuration and the database entry.", ServerCommands::updateIP);
         handler.register("update-port", "<new-port>", "Updates the port of the server. This will " +
                 "edit both the configuration and the database entry.", ServerCommands::updatePort);
+        handler.register("list-servers", "Lists the servers registered in the database.",
+                ServerCommands::fetchAllServers);
     }
 
     public static void reconnectDatabase(String[] args) {
@@ -94,5 +97,11 @@ public class ServerCommands {
         Administration.Config.port.set(newPort);
         Log.info("Port updated. Keep in mind that you may need to restart the server for these changes to take" +
                 " effect.");
+    }
+
+    public static void fetchAllServers(String[] args) {
+        List<Server> results = database.server().getAll();
+
+        Log.info(results);
     }
 }
