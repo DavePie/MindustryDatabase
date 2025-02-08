@@ -3,7 +3,7 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.*;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import org.mariadb.jdbc.Driver;
+import org.postgresql.Driver;
 import java.util.Objects;
 
 public final class DatabaseImpl implements Database {
