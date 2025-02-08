@@ -1,0 +1,12 @@
+[versions]
+jooq       = "3.19.18"
+postgresql = "42.7.5"
+argon2     = "2.11"
+
+[plugins]
+jooqCodegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq"}
+
+[libraries]
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+argon2 = { module = "de.mkammerer:argon2-jvm-nolibs", version.ref = "argon2" }

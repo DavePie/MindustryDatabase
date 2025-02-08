@@ -1,12 +1,12 @@
 buildscript {
     dependencies {
-        classpath("org.mariadb.jdbc:mariadb-java-client:3.5.1")
+        classpath(libs.postgresql)
     }
 }
 
 plugins {
     id 'java-library'
-    id "org.jooq.jooq-codegen-gradle" version "3.19.16"
+    alias(libs.plugins.jooqCodegen)
 }
 
 group = 'net.ddns.mindustry.database.client'
@@ -16,17 +16,11 @@ repositories {
     mavenCentral()
 }
 
-ext {
-    jooq_version    = "3.19.16"
-    mariadb_version = "3.5.1"
-    argon2_version  = "2.11"
-}
-
 dependencies {
 
-    implementation ("org.mariadb.jdbc:mariadb-java-client:${mariadb_version}")
-    implementation("org.jooq:jooq:${jooq_version}")
-    implementation("de.mkammerer:argon2-jvm-nolibs:${argon2_version}")
+    implementation libs.postgresql
+    implementation libs.jooq
+    implementation libs.argon2
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -53,7 +47,7 @@ file("jooq.properties").withInputStream { stream ->
 jooq {
     configuration {
         jdbc {
-            driver   = "org.mariadb.jdbc.Driver"
+            driver   = "org.postgresql.Driver"
             url      = dbProps.getProperty('url')
             user     = dbProps.getProperty('user')
             password = dbProps.getProperty('password')
@@ -61,7 +55,7 @@ jooq {
         generator {
             database {
 
-                name = "org.jooq.meta.mariadb.MariaDBDatabase"
+                name = "org.jooq.meta.postgres.PostgresDatabase"
 
                 // All elements that are generated from your schema (A Java regular expression.
                 // Use the pipe to separate several expressions) Watch out for
@@ -77,10 +71,10 @@ jooq {
                 // Use the pipe to separate several expressions). Excludes match before
                 // includes, i.e. excludes have a higher priority
                 excludes = """
-                           UNUSED_TABLE                # This table (unqualified name) should not be generated
-                           | PREFIX_.*                   # Objects with a given prefix should not be generated
+                           UNUSED_TABLE                   # This table (unqualified name) should not be generated
+                           | PREFIX_.*                    # Objects with a given prefix should not be generated
                            | SECRET_SCHEMA\\.SECRET_TABLE # This table (qualified name) should not be generated
-                           | SECRET_ROUTINE              # This routine (unqualified name) ...
+                           | SECRET_ROUTINE               # This routine (unqualified name) ...
                            """
                 // The schema that is used locally as a source for meta information.
                 // This could be your development schema or the production schema, etc
@@ -88,27 +82,7 @@ jooq {
                 //
                 // If left empty, jOOQ will generate all available schemata. See the
                 // manual's next section to learn how to generate several schemata
-                inputSchema = "mindustry_database"
-
-                forcedTypes {
-                    // INET4 binding to use String.
-                    forcedType {
-
-                        // Specify the Java type of your custom type. Use String for INET4 types.
-                        userType = "java.lang.String"
-
-                        // Optionally specify whether the binding receives <T, U> type variables
-                        // and Class<T>, Class<U> constructor arguments. Default is false.
-                        genericBinding = false
-
-                        // A Java regex matching fully-qualified columns, attributes, parameters. Use the pipe to separate several expressions.
-                        includeExpression = ".*"
-
-                        // A Java regex matching data types to be forced to
-                        // have this type.
-                        includeTypes = "(?i:INET4)"
-                    }
-                }
+                inputSchema = "public"
             }
 
             // Generation flags: See advanced configuration properties
