@@ -88,10 +88,10 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
             final Account account = find(tDsl, username).orElse(null);
             if (account == null) return new LoginStatus.WrongCredentials();
 
-            if (!security.verifyPassHash(hashedPassword, password)) return new LoginStatus.WrongCredentials();
+            if (!hashedPassword.equals(account.password())) return new LoginStatus.WrongCredentials();
 
-            // I update the password in case the argon2 settings have been changed.
             tDsl.update(ACCOUNT)
+                    // I update the password in case the argon2 settings have been modified.
                     .set(ACCOUNT.PASSWORD, hashedPassword)
                     .where(ACCOUNT.ID.eq(account.id()))
                     .execute();

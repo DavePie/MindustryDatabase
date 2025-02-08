@@ -49,10 +49,6 @@ public final class SecurityConfig {
         return passHash().hash(argon2Iteration(), argon2Memory(), argon2Parallelism(), password);
     }
 
-    public boolean verifyPassHash(String hash, char[] password) {
-        return passHash().verify(hash, password);
-    }
-
     public int argon2Iteration() {
         return argon2Iteration;
     }
