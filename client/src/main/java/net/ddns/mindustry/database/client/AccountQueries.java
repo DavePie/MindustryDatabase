@@ -20,7 +20,11 @@ public interface AccountQueries {
 
     void logout(Account account) throws DataAccessException;
 
-//    void signup(String username, String password);
+    /// Creates a new account with this username and password.
+    /// @param username the new account username.
+    /// @param password the new account password.
+    /// @param ip the player address for internal checks.
+    SignupStatus signup(String username, char[] password, String ip);
 
     JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException;
 
@@ -38,19 +42,15 @@ public interface AccountQueries {
         record AlreadyLoggedIn() implements LoginStatus {}
     }
 
-//    sealed interface SignupStatus {
-//        /// The types of invalid credentials.
-//        enum CredentialInvalidityType {
-//            BadName,
-//            BadPassword,
-//        }
-//
-//        /// The credentials that were provided are unsupported.
-//        record UnsupportedCredentials(CredentialInvalidityType type, String reason) implements SignupStatus {}
-//
-//        /// The username that was provided by the user is already in use.
-//        record UsernameInUse() implements SignupStatus {}
-//    }
+    sealed interface SignupStatus {
+
+        record InvalidName() implements SignupStatus {}
+
+        record InvalidPassword() implements SignupStatus {}
+
+        /// The username that was provided by the user is already in use.
+        record UsernameInUse() implements SignupStatus {}
+    }
 
     sealed interface JoinStatus {
 

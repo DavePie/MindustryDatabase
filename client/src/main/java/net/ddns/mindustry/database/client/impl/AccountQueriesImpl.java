@@ -110,6 +110,11 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
+    public SignupStatus signup(String username, char[] password, String ip) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
     public JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException {
 
         Objects.requireNonNull(server);
