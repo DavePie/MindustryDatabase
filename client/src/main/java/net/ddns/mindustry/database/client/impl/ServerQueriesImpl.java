@@ -62,10 +62,8 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
     @Override
     public void update(Server server, String newIP, Integer newPort, String newName) {
         Objects.requireNonNull(server);
-        final Inet newInet = inet(newIP);
-
         dsl.update(SERVER)
-                .set(SERVER.IP_ADDRESS, newIP == null ? server.ipAddress() : newInet)
+                .set(SERVER.IP_ADDRESS, newIP == null ? server.ipAddress() : inet(newIP))
                 .set(SERVER.PORT, newPort == null ? server.port() : newPort)
                 .set(SERVER.NAME, newName == null ? server.name() : newName)
                 .where(SERVER.ID.eq(server.id()))
