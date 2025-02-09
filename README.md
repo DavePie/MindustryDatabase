@@ -36,8 +36,9 @@ maximum duration, then the user's session will become invalid when the user join
 - `register-server <name>` - Registers the server into the database.
 - `deregister-server [id]` - Deregisters the server from the database. If an ID is provided, then it will deregister
 that specific server.
-- `update-ip <new ip>` - Updates the IP of the database entry for the server.
-- `update-port <new port>` - Updates the port of the database entry for the server.
+- `update-ip <new-ip>` - Updates the IP of the database entry for the server.
+- `update-port <new-port>` - Updates the port of the database entry for the server.
+- `update-name <new-name>` - Updates the name of the server. Does **NOT** update the `serverName` configuration.
 - `list-servers` - Lists all the servers in the database.
 
 # Database Schema

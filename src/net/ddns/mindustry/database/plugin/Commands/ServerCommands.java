@@ -18,6 +18,8 @@ public class ServerCommands {
             " configuration in both the database and the config are valid.";
 
     public static void load(CommandHandler handler) {
+        // ---- Direct database stuff ----
+
         handler.register("reconnect", "Reconnects to the database.", ServerCommands::reconnectDatabase);
         handler.register("register-server", "<name>", "Registers the server to the database.",
                 ServerCommands::registerServer);
@@ -25,8 +27,10 @@ public class ServerCommands {
                 ServerCommands::deregisterServer);
         handler.register("update-ip", "<new-ip>", "Updates the IP of the server. This will edit" +
                         " both the configuration and the database entry.", ServerCommands::updateIP);
-        handler.register("update-port", "<new-port>", "Updates the port of the server. This will " +
-                "edit both the configuration and the database entry.", ServerCommands::updatePort);
+        handler.register("update-port", "<new-port>", "Updates the port of the server. This will" +
+                " edit both the configuration and the database entry.", ServerCommands::updatePort);
+        handler.register("update-name", "<new-name>", "Updates the name of the server. Will NOT " +
+                "update the configuration.", ServerCommands::updateName);
         handler.register("list-servers", "Lists the servers registered in the database.",
                 ServerCommands::fetchAllServers);
     }
@@ -54,7 +58,7 @@ public class ServerCommands {
             return;
         }
 
-        int targetID = currentServer.get().id().intValue();
+        int targetID = currentServer.get().id();
 
         if (args.length == 1) {
             targetID = Integer.parseInt(args[0]);
@@ -81,7 +85,7 @@ public class ServerCommands {
 
         database.server().update(server.get(), newIP, null, null);
         configServerIP.set(newIP);
-        Log.info("The IP of the server is updated.");
+        Log.info("The IP of the server was updated successfully.");
     }
 
     private static void updatePort(String[] args) {
@@ -99,9 +103,44 @@ public class ServerCommands {
                 " effect.");
     }
 
+    private static void updateName(String[] args) {
+        String newName = args[0];
+        Optional<Server> server = database.server().find(configServerIP.string(), Administration.Config.port.num());
+
+        if (server.isEmpty()) {
+            Log.err(SERVER_IP_PORT_ERROR);
+            return;
+        }
+
+        database.server().update(server.get(), null, null, newName);
+        Log.info("The name of the server was updated successfully.");
+    }
+
+    ///  If it ain't broke, then don't fix it.
     public static void fetchAllServers(String[] args) {
         List<Server> results = database.server().getAll();
+        String[] output = new String[results.size()];
 
-        Log.info(results);
+        for (int i = 0; i < results.size(); i++) {
+            Server server = results.get(i);
+
+            output[i] = String.format(
+                    """
+                    %d - %s
+                    \t- IP \t\t%s
+                    \t- PORT \t\t%d
+                    \t- HEARTBEAT \t%s
+                    """,
+                    server.id(), server.name(),
+                    server.ipAddress().toString(),
+                    server.port(),
+                    server.heartbeat()
+            );
+
+            for (String toOutput : output) {
+                if (toOutput.isBlank()) continue;
+                System.out.println(toOutput);
+            }
+        }
     }
 }
