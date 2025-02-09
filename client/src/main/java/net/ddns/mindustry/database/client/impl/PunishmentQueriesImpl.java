@@ -7,6 +7,7 @@ import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -19,6 +20,16 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
         return tDsl.selectFrom(BAN)
                 .where(BAN.UUID.eq(uuid))
                 .fetchOptionalInto(Ban.class);
+    }
+
+    @Override
+    public List<Ban> activeBans(Account account) {
+        final var now = OffsetDateTime.now();
+        return dsl.select()
+                .from(BAN)
+                .leftAntiJoin(UNBAN).on(UNBAN.BAN_ID.eq(BAN.ID))
+                .where(BAN.EXPIRATION_DATE.isNull().or(BAN.EXPIRATION_DATE.greaterThan(now)))
+                .fetchInto(Ban.class);
     }
 
     @Override

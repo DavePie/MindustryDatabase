@@ -1,11 +1,15 @@
 package net.ddns.mindustry.database.client;
 
+import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Ban;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PunishmentQueries {
+
+    List<Ban> activeBans(Account account);
 
     Optional<Ban> findBan(long uuid);
 
@@ -19,6 +23,7 @@ public interface PunishmentQueries {
 
     Status warn(String punishedUsername, String staffUsername, String reason, Server server);
 
+    // TODO Provide uuid instead of ban?
     UnbanStatus unban(Ban ban, String staffUsername);
 
     enum Status {

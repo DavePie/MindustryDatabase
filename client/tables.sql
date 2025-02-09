@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS ban_appeal(
     CONSTRAINT fk_ban_appeal_account FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_ban_appeal_ban     FOREIGN KEY(ban_id)     REFERENCES ban(id)
 );
-
+-- TODO Automatically insert unban if accepted is true?
 CREATE TABLE IF NOT EXISTS ban_appeal_reply(
 
     id            SERIAL      PRIMARY KEY,
