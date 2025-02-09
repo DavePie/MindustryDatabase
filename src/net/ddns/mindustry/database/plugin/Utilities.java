@@ -20,17 +20,16 @@ public class Utilities {
         try {
             securityConfig = new SecurityConfig("SHA-256", 32, 255, 10,
                     69_000, 8);
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (NoSuchAlgorithmException | ClassNotFoundException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            database = Database.newConnection("jdbc:mariadb://" + configURL.string() + "/mindustry_database",
+            database = Database.newConnection("jdbc:postgresql://" + configURL.string() + "/mindustry_database",
                     configUser.string(), configPassword.string(), securityConfig);
         } catch (Exception e) {
             Log.debug(e);
-            Log.info("Ensure that the URL, the user, and the user's password is correct.");
+            Log.warn("Ensure that the URL, the user, and the user's password is correct.");
             return null;
         }
 

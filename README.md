@@ -4,10 +4,6 @@ A Mindustry plugin for saving and handling data about players.
 [![](https://www.jitpack.io/v/mindustry-ddns-net/MindustryDatabase.svg)](https://www.jitpack.io/#mindustry-ddns-net/MindustryDatabase)
 
 
-
-# Keep in mind
-This doesn't provide any moderation commands itself. However, the database does provide methods for moderation.
-
 # Installation
 ## Supports
 [ ] Client <br>
@@ -23,7 +19,7 @@ This doesn't provide any moderation commands itself. However, the database does 
 6. Start or restart the server
 7. Type in the respective config values for `url`, `user`, and `password` via `config CONFIG PARAMETER`
 8. Run the `reconnect` command.
-9. Register the server to the database via the `register` command (if you haven't run the `update-ip` command).
+9. Register the server to the database via the `register-server` command (if you haven't run the `update-ip` command).
 
 # Configs
 - `server-ip` - The IP of the Mindustry server. This is optional and should only be changed when necessary. Default is

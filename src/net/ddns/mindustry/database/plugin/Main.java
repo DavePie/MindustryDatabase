@@ -7,10 +7,22 @@ import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.plugin.Commands.ClientCommands;
 import net.ddns.mindustry.database.plugin.Commands.ServerCommands;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Main extends Plugin {
     public static Database database;
 
+    // I'm going to kill myself is jOOQ sends another self-ad
+    private static final Logger JOOQ_AD_LOGGER = Logger.getLogger("org.jooq.Constants");
+    static {
+        JOOQ_AD_LOGGER.setLevel(Level.WARNING);
+    }
+
     public void init() {
+        // https://stackoverflow.com/a/5762502
+        Log.info("\u001B[34mPowered by jOOQ.\u001B[0m");
+
         Configs.load();
         Events.load();
 

@@ -39,6 +39,8 @@ dependencies{
 }
 
 jar{
+    dependsOn("client:jar")
+
     archiveFileName = "${project.archivesBaseName}.jar"
     from{
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
@@ -58,7 +60,7 @@ java {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            groupId = 'org.lettsn'
+            groupId = 'net.ddns.mindustry'
             artifactId = 'MindustryDatabase'
             version = '1.1'
 
