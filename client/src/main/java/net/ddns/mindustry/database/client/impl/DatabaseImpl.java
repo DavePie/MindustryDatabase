@@ -17,7 +17,7 @@ public final class DatabaseImpl implements Database {
 
         try { Class.forName(Driver.class.getName());
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("The mariadb driver could not be loaded.", e);
+            throw new IllegalStateException("The database driver could not be loaded.", e);
         }
 
         final DSLContext dsl = DSL.using(Objects.requireNonNull(url),
