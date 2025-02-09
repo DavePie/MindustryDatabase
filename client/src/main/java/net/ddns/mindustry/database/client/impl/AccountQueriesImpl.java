@@ -6,9 +6,9 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
-import org.jooq.types.UInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -26,17 +26,15 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .from(ACCOUNT_SESSION)
                 .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(session))
                 .fetchOptional()
-                .map(result -> result.get(ACCOUNT_SESSION.EXPIRATION_DATE).atOffset(ZoneOffset.UTC))
+                .map(result -> result.get(ACCOUNT_SESSION.EXPIRATION_DATE))
                 // In case the session has not expired, I return true.
-                .map(expiration -> expiration.isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
+                .map(expiration -> expiration.isAfter(OffsetDateTime.now()))
                 .orElse(false); // No entry, no session available.
     }
 
-    private void createSession(DSLContext tDsl, UInteger accountId, byte[] session, int durationHours) throws DataAccessException {
+    private void createSession(DSLContext tDsl, int accountId, byte[] session, int durationHours) throws DataAccessException {
 
-        final var expiration = OffsetDateTime.now(ZoneOffset.UTC)
-                .plusHours(durationHours)
-                .toLocalDateTime();
+        final var expiration = OffsetDateTime.now().plusHours(durationHours);
 
         tDsl.insertInto(ACCOUNT_SESSION)
                 .set(ACCOUNT_SESSION.ACCOUNT_ID, accountId)
@@ -52,7 +50,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .fetchOptionalInto(Account.class);
     }
 
-    public Account find(DSLContext tDsl, UInteger id) {
+    public Account find(DSLContext tDsl, int id) {
         return tDsl.selectFrom(ACCOUNT)
                 .where(ACCOUNT.ID.eq(id))
                 .fetchOneInto(Account.class);
@@ -83,12 +81,12 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
              - I want the already authenticated players to be checked fast.
              - I want to take the same amount of time if the user exists or not, to avoid username scanning.
              */
-            final String hashedPassword = security().hashPass(password);
+            final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
 
             final Account account = find(tDsl, username).orElse(null);
             if (account == null) return new LoginStatus.WrongCredentials();
 
-            if (!hashedPassword.equals(account.password())) return new LoginStatus.WrongCredentials();
+            if (!Arrays.equals(hashedPassword, account.password())) return new LoginStatus.WrongCredentials();
 
             tDsl.update(ACCOUNT)
                     // I update the password in case the argon2 settings have been modified.
@@ -128,12 +126,10 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
             // No entry means not authenticated.
             if (result == null) return new JoinStatus.NotAuthenticated();
 
-            final UInteger accountId = result.get(ACCOUNT_SESSION.ACCOUNT_ID);
+            final int accountId = result.get(ACCOUNT_SESSION.ACCOUNT_ID);
 
             // I check if the session expired.
-            if (result.get(ACCOUNT_SESSION.EXPIRATION_DATE)
-                    .atOffset(ZoneOffset.UTC)
-                    .isBefore(OffsetDateTime.now(ZoneOffset.UTC))) return new JoinStatus.SessionExpired();
+            if (result.get(ACCOUNT_SESSION.EXPIRATION_DATE).isBefore(OffsetDateTime.now())) return new JoinStatus.SessionExpired();
 
             // I check if the account is already inside a server.
             if (tDsl.selectOne()
@@ -156,9 +152,8 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     @Override
     public void leavesServer(Account account) throws DataAccessException {
         Objects.requireNonNull(account);
-        final var now = OffsetDateTime.now(ZoneOffset.UTC).toLocalDateTime();
         dsl.update(SERVER_JOIN)
-                .set(SERVER_JOIN.LEAVE_DATE, now)
+                .set(SERVER_JOIN.LEAVE_DATE, OffsetDateTime.now())
                 .where(SERVER_JOIN.ACCOUNT_ID.eq(account.id()).and(SERVER_JOIN.LEAVE_DATE.isNull()))
                 .execute();
     }

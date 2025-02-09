@@ -22,14 +22,15 @@ CREATE TABLE IF NOT EXISTS server(
 
     id               SERIAL       PRIMARY KEY,
     ip_address       INET         NOT NULL,
-    port             SMALLINT     NOT NULL,
+    port             INT          NOT NULL,
     name             VARCHAR(255) NOT NULL,
     -- Last heartbeat available used in case the server goes offline.
     heartbeat        TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- The period of the heartbeat in milliseconds.
     heartbeat_period INT          NOT NULL DEFAULT 5000,
 
-    CONSTRAINT u_server_ip_port UNIQUE(ip_address, port)
+    CONSTRAINT u_server_ip_port UNIQUE(ip_address, port),
+    CONSTRAINT chk_port_valid CHECK (port >= 0 AND port <= 65535)
 );
 
 CREATE TABLE IF NOT EXISTS login(

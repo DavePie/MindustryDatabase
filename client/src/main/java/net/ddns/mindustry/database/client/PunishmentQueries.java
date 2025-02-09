@@ -2,14 +2,14 @@ package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Ban;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public interface PunishmentQueries {
 
     Optional<Ban> findBan(long uuid);
 
-    Status ban(String punishedUsername, String staffUsername, String reason, Server server, LocalDateTime expiration);
+    Status ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration);
 
     default void permBan(String username, String staff, Server server, String reason) {
         ban(username, staff, reason, server, null);

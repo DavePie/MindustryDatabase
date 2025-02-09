@@ -10,5 +10,6 @@ jooqCodegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq"}
 [libraries]
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+jooqPostgresqlExtension = {module = "org.jooq:jooq-postgres-extensions", version.ref = "jooq" }
 argon2 = { module = "de.mkammerer:argon2-jvm-nolibs", version.ref = "argon2" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }

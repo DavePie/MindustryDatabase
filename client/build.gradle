@@ -1,6 +1,7 @@
 buildscript {
     dependencies {
-        classpath(libs.postgresql)
+        classpath libs.postgresql
+        classpath libs.jooqPostgresqlExtension
     }
 }
 
@@ -18,8 +19,9 @@ repositories {
 
 dependencies {
 
-    implementation libs.postgresql
     implementation libs.jooq
+    implementation libs.postgresql
+    implementation libs.jooqPostgresqlExtension
     implementation libs.argon2
     implementation libs.jna // For some reason gradle cannot resolve this dependency for argon2, so I added it manually.
 
@@ -96,5 +98,17 @@ jooq {
                 directory = "build/generated-sources/jooq"
             }
         }
+    }
+}
+
+tasks.register("updateDatabase") {
+    exec {
+        commandLine "dropdb", "--if-exists", "mindustry_database"
+    }
+    exec {
+        commandLine "createdb", "mindustry_database"
+    }
+    exec {
+        commandLine "psql", "mindustry_database", "-f", "tables.sql"
     }
 }

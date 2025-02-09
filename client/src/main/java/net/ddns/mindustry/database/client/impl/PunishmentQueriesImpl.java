@@ -6,7 +6,7 @@ import net.ddns.mindustry.database.schema.tables.pojos.Ban;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -27,7 +27,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
     }
 
     @Override
-    public Status ban(String punishedUsername, String staffUsername, String reason, Server server, LocalDateTime expiration) {
+    public Status ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration) {
 
         Objects.requireNonNull(punishedUsername);
         Objects.requireNonNull(staffUsername);
