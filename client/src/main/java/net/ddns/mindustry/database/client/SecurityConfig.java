@@ -9,7 +9,6 @@ import java.util.Objects;
 /// Class containing the hash configuration for sessions and passwords.
 public final class SecurityConfig {
 
-    // TODO Include algorithms like SHA2-256, if not available SHA3-256?
     private final MessageDigest sessionDigest;
     private final Argon2 argon2;
     private final int argon2Iteration;
@@ -29,6 +28,15 @@ public final class SecurityConfig {
         this.argon2Iteration = argon2Iteration;
         this.argon2Memory = argon2Memory;
         this.argon2Parallelism = argon2Parallelism;
+    }
+
+    public SecurityConfig(int saltLength,
+                    int hashLength,
+                    int argon2Iteration,
+                    int argon2Memory,
+                    int argon2Parallelism) throws NoSuchAlgorithmException {
+        // The default is Sha-256, a good default in terms of speed and security.
+        this("SHA-256", saltLength, hashLength, argon2Iteration, argon2Memory, argon2Parallelism);
     }
 
     @Deprecated

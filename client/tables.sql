@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS account(
     id            SERIAL       PRIMARY KEY,
     username      VARCHAR(15)  NOT NULL UNIQUE, -- Anything bigger than 15 is quite long.
     display_name  VARCHAR(255) NOT NULL,
-    creation_date TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- Variable length hash, not fixed length since the hash can get very long by changing the settings, and I want to allow that for future proofing.
     password      BYTEA        NOT NULL, -- Argon2id
+    creation_date TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- I use the discord username validation since they fit our use cases.
     CONSTRAINT chk_username_valid CHECK (

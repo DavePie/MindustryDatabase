@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface AccountQueries {
 
+    boolean isUsernameValid(String username);
+
     /// Searches the account with this username.
     /// @return the account if found.
     Optional<Account> find(String username) throws DataAccessException;
@@ -24,7 +26,8 @@ public interface AccountQueries {
     /// @param username the new account username.
     /// @param password the new account password.
     /// @param ip the player address for internal checks.
-    SignupStatus signup(String username, char[] password, String ip);
+    /// @param uuid the player uuid for internal checks.
+    SignupStatus signup(String username, char[] password, String displayName, String ip, String uuid);
 
     JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException;
 
@@ -43,6 +46,8 @@ public interface AccountQueries {
     }
 
     sealed interface SignupStatus {
+
+        record Created(Account account) implements SignupStatus {}
 
         record InvalidName() implements SignupStatus {}
 

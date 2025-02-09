@@ -57,6 +57,22 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
+    public boolean isUsernameValid(String username) {
+
+        if (username == null) return false;
+
+        // Check 1: Length must be greater than 2
+        if (username.length() <= 2) return false;
+
+        // Check 2: The username must match the regex pattern "^[a-z0-9_.]+$"
+        // This ensures that only lowercase letters, digits, underscores, and dots are present.
+        if (!username.matches("^[a-z0-9_.]+$")) return false;
+
+        // Check 3: The username must not contain two consecutive dots ("..")
+        return !username.contains("..");
+    }
+
+    @Override
     public Optional<Account> find(String username) {
         return find(dsl, username);
     }
@@ -110,8 +126,27 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public SignupStatus signup(String username, char[] password, String ip) {
-        throw new UnsupportedOperationException("TODO");
+    public SignupStatus signup(String username, char[] password, String displayName, String ip, String uuid) {
+
+        if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidName();
+        Objects.requireNonNull(displayName);
+        Objects.requireNonNull(password);
+
+        // I do this here to make the signup operation slow in every case.
+        final byte[] hashedPass = security.hashPass(password).getBytes(StandardCharsets.UTF_8);
+
+        // TODO Account checking.
+
+        final Account account = dsl.insertInto(ACCOUNT)
+                .set(ACCOUNT.USERNAME, username)
+                .set(ACCOUNT.DISPLAY_NAME, displayName)
+                .set(ACCOUNT.PASSWORD, hashedPass)
+                .onConflict(ACCOUNT.USERNAME)
+                .doNothing()
+                .returning(ACCOUNT)
+                .fetchOneInto(Account.class);
+
+        return account == null ? new SignupStatus.UsernameInUse() : new SignupStatus.Created(account);
     }
 
     @Override
