@@ -40,6 +40,7 @@ that specific server.
 - `update-port <new-port>` - Updates the port of the database entry for the server.
 - `update-name <new-name>` - Updates the name of the server. Does **NOT** update the `serverName` configuration.
 - `list-servers` - Lists all the servers in the database.
+- `heartbeat-debug` - Sends a heartbeat to the database. DEBUG ONLY.
 
 # Database Schema
 For the database schema, see [this file](client/tables.sql).

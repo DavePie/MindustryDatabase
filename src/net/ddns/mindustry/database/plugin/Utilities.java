@@ -35,4 +35,11 @@ public class Utilities {
 
         return database;
     }
+
+    /**
+     * Restarts anything that is dependent upon the IP and port configurations of the server.
+     */
+    public static void restartConfigDependentFeatures() {
+        PeriodicTasks.reload();
+    }
 }

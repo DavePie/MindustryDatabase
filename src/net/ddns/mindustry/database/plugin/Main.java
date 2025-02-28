@@ -27,6 +27,8 @@ public class Main extends Plugin {
 
         database = Utilities.newDatabase();
 
+        PeriodicTasks.load();
+
         Log.debug("Database connection successful!");
     }
 

@@ -11,12 +11,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static net.ddns.mindustry.database.plugin.Configs.configServerIP;
+import static net.ddns.mindustry.database.plugin.Constants.SERVER_IP_PORT_ERROR;
 import static net.ddns.mindustry.database.plugin.Main.database;
 
 public class ServerCommands {
-    protected static final String SERVER_IP_PORT_ERROR = "The server configuration is invalid. Ensure that the server" +
-            " configuration in both the database and the config are valid.";
-
     public static void load(CommandHandler handler) {
         // ---- Direct database stuff ----
 
@@ -33,6 +31,8 @@ public class ServerCommands {
                 "update the configuration.", ServerCommands::updateName);
         handler.register("list-servers", "Lists the servers registered in the database.",
                 ServerCommands::fetchAllServers);
+        handler.register("heartbeat-debug", "Sends a heartbeat to the database. DEBUG ONLY.",
+                ServerCommands::heartbeatDebug);
     }
 
     public static void reconnectDatabase(String[] args) {
@@ -53,7 +53,8 @@ public class ServerCommands {
     private static void deregisterServer(String[] args) {
         Optional<Server> currentServer = database.server().find(configServerIP.string(), Administration.Config.port.num());
 
-        if (currentServer.isEmpty() && args.length == 0) {
+        // I would have a ` && args.length == 0`, but that'll possibly cause issues.
+        if (currentServer.isEmpty()) {
             Log.err(SERVER_IP_PORT_ERROR);
             return;
         }
@@ -85,6 +86,8 @@ public class ServerCommands {
 
         database.server().update(server.get(), newIP, null, null);
         configServerIP.set(newIP);
+        Utilities.restartConfigDependentFeatures();
+
         Log.info("The IP of the server was updated successfully.");
     }
 
@@ -99,6 +102,8 @@ public class ServerCommands {
 
         database.server().update(server.get(), null, newPort, null);
         Administration.Config.port.set(newPort);
+        Utilities.restartConfigDependentFeatures();
+
         Log.info("Port updated. Keep in mind that you may need to restart the server for these changes to take" +
                 " effect.");
     }
@@ -136,11 +141,29 @@ public class ServerCommands {
                     server.port(),
                     server.heartbeat()
             );
-
-            for (String toOutput : output) {
-                if (toOutput.isBlank()) continue;
-                System.out.println(toOutput);
-            }
         }
+
+        for (String toOutput : output) {
+            if (toOutput.isBlank()) continue;
+            System.out.println(toOutput);
+        }
+    }
+
+    public static void heartbeatDebug(String[] args) {
+        if (!Administration.Config.debug.bool()) {
+            Log.warn("This is a command intended for debugging and is not meant to be used in a production" +
+                    " environment. If you truly do wish to run this command, then run `config debug true` to enable" +
+                    " debugging.");
+            return;
+        }
+
+        Optional<Server> server = database.server().find(configServerIP.string(), Administration.Config.port.num());
+
+        if (server.isEmpty()) {
+            Log.err(SERVER_IP_PORT_ERROR);
+            return;
+        }
+
+        database.server().heartbeat(server.get());
     }
 }
