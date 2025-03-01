@@ -66,6 +66,8 @@ public interface AccountQueries {
         record AlreadyInServer() implements JoinStatus {}
 
         /// The account session has expired, and the account must re-authenticate.
+        /// @deprecated to simplify the authentication logic, this has been moved inside {@link NotAuthenticated}.
+        @Deprecated(forRemoval = true)
         record SessionExpired() implements JoinStatus {}
 
         /// The account is not authenticated.

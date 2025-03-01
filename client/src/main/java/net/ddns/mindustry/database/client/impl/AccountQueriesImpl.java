@@ -8,9 +8,10 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.stream.IntStream;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implements AccountQueries {
@@ -21,15 +22,18 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         return security().sessionHash().digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
     }
 
-    private boolean hasSession(DSLContext tDsl, byte[] session) {
-        return tDsl.select(ACCOUNT_SESSION.ID, ACCOUNT_SESSION.EXPIRATION_DATE)
+    /// @return the account id, if the session is present and not expired, or else, the empty optional.
+    private OptionalInt sessionAccountId(DSLContext tDsl, byte[] session) {
+        return tDsl.select(ACCOUNT_SESSION.ACCOUNT_ID, ACCOUNT_SESSION.EXPIRATION_DATE)
                 .from(ACCOUNT_SESSION)
                 .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(session))
-                .fetchOptional()
-                .map(result -> result.get(ACCOUNT_SESSION.EXPIRATION_DATE))
-                // In case the session has not expired, I return true.
-                .map(expiration -> expiration.isAfter(OffsetDateTime.now()))
-                .orElse(false); // No entry, no session available.
+                .fetchStream()
+                .limit(1) // Always only one element.
+                .flatMapToInt(result -> {
+                    final OffsetDateTime expiration = result.get(ACCOUNT_SESSION.EXPIRATION_DATE);
+                    if (expiration.isBefore(OffsetDateTime.now())) return null; // The session expired.
+                    return IntStream.of(result.get(ACCOUNT_SESSION.ACCOUNT_ID));
+                }).findFirst();
     }
 
     private void createSession(DSLContext tDsl, int accountId, byte[] session, int durationHours) throws DataAccessException {
@@ -87,25 +91,29 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         final byte[] session = createSessionHash(ip, uuid);
 
         return dsl.transactionResult(ctx -> {
-            DSLContext tDsl = ctx.dsl();
 
-            if (hasSession(tDsl, session)) return new LoginStatus.AlreadyLoggedIn();
+            final DSLContext tDsl = ctx.dsl();
+            // I return if the user is already authenticated.
+            if (sessionAccountId(tDsl, session).isPresent()) return new LoginStatus.AlreadyLoggedIn();
 
-            /*
-            I calculate the compute-expensive password.
-            I do this here because:
-             - I want the already authenticated players to be checked fast.
-             - I want to take the same amount of time if the user exists or not, to avoid username scanning.
-             */
+            // Computationally expensive hash.
+            // I hash and update it on the database, because if the password is correct,
+            // I want to update it using the latest security configuration.
+            // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
+            // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
             final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
 
             final Account account = find(tDsl, username).orElse(null);
-            if (account == null) return new LoginStatus.WrongCredentials();
+            if (account == null) {
+                security().hashPass(password); // Wasteful operation to avoid username scanning.
+                return new LoginStatus.WrongCredentials();
+            }
 
-            if (!Arrays.equals(hashedPassword, account.password())) return new LoginStatus.WrongCredentials();
+            final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
+            if (!security().passHash().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
 
             tDsl.update(ACCOUNT)
-                    // I update the password in case the argon2 settings have been modified.
+                    // I update the password with the latest argon2 configuration.
                     .set(ACCOUNT.PASSWORD, hashedPassword)
                     .where(ACCOUNT.ID.eq(account.id()))
                     .execute();
@@ -156,20 +164,13 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         final byte[] session = createSessionHash(ip, uuid);
 
         return dsl.transactionResult(ctx -> {
+
             final DSLContext tDsl = ctx.dsl();
 
-            final var result = tDsl.select(ACCOUNT_SESSION.ACCOUNT_ID, ACCOUNT_SESSION.EXPIRATION_DATE)
-                    .from(ACCOUNT_SESSION)
-                    .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(session))
-                    .fetchOne();
-
-            // No entry means not authenticated.
-            if (result == null) return new JoinStatus.NotAuthenticated();
-
-            final int accountId = result.get(ACCOUNT_SESSION.ACCOUNT_ID);
-
-            // I check if the session expired.
-            if (result.get(ACCOUNT_SESSION.EXPIRATION_DATE).isBefore(OffsetDateTime.now())) return new JoinStatus.SessionExpired();
+            // The session is not present or is expired.
+            final OptionalInt oAccountId = sessionAccountId(tDsl, session);
+            if (oAccountId.isEmpty()) return new JoinStatus.NotAuthenticated();
+            final int accountId = oAccountId.orElseThrow();
 
             // I check if the account is already inside a server.
             if (tDsl.selectOne()
