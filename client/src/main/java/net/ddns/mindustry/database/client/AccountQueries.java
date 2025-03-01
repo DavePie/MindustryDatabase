@@ -37,6 +37,14 @@ public interface AccountQueries {
 
     void leavesServer(Account account) throws DataAccessException;
 
+    /// Updates the display name of an account.
+    void updateDisplayName(Account account, String newDisplayName) throws DataAccessException;
+
+    /// Updates the password of an account.
+    /// @param newPassword The new password.
+    /// @param oldPassword The old password.
+    PasswordUpdateStatus updatePassword(Account account, char[] newPassword, char[] oldPassword) throws DataAccessException;
+
     sealed interface LoginStatus {
 
         /// The credentials are correct and the account has logged in.
@@ -79,5 +87,11 @@ public interface AccountQueries {
 
         /// The account does not have enough authorizations to join this server.
         record NotAuthorized() implements JoinStatus {}
+    }
+
+    sealed interface PasswordUpdateStatus {
+        record Updated() implements PasswordUpdateStatus {}
+
+        record InvalidPassword() implements PasswordUpdateStatus {}
     }
 }

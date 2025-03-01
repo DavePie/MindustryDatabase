@@ -215,4 +215,33 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .where(SERVER_JOIN.ACCOUNT_ID.eq(account.id()).and(SERVER_JOIN.LEAVE_DATE.isNull()))
                 .execute();
     }
+
+    @Override
+    public void updateDisplayName(Account account, String newDisplayName) {
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(newDisplayName);
+
+        dsl.update(ACCOUNT)
+                .set(ACCOUNT.DISPLAY_NAME, newDisplayName)
+                .where(ACCOUNT.ID.eq(account.id()))
+                .execute();
+    }
+
+    @Override
+    public PasswordUpdateStatus updatePassword(Account account, char[] newPassword, char[] oldPassword) {
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(newPassword);
+
+        final byte[] hashedNewPassword = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
+
+        final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
+        if (!security().passHash().verify(dbHash, oldPassword)) return new PasswordUpdateStatus.InvalidPassword();
+
+        dsl.update(ACCOUNT)
+                .set(ACCOUNT.PASSWORD, hashedNewPassword)
+                .where(ACCOUNT.ID.eq(account.id()))
+                .execute();
+
+        return new PasswordUpdateStatus.Updated();
+    }
 }
