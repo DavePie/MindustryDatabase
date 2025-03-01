@@ -2,6 +2,7 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.SecurityConfig;
+import net.ddns.mindustry.database.schema.tables.pojos.AccountSession;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
@@ -12,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
+
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implements AccountQueries {
@@ -79,6 +81,21 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     @Override
     public Optional<Account> find(String username) {
         return find(dsl, username);
+    }
+
+    @Override
+    public Optional<Account> find(String ip, String uuid) {
+        byte[] sessionHash = createSessionHash(ip, uuid);
+
+        Optional<AccountSession> session = dsl.selectFrom(ACCOUNT_SESSION)
+                .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(sessionHash))
+                .fetchOptionalInto(AccountSession.class);
+
+        // I saw an IDE warning that told me that the expression can be shortened. To my surprise, when clicking on it,
+        // it cast a dark magic spell. Don't ask me how this line works. I do not know how it works.
+        return session.flatMap(accountSession -> dsl.selectFrom(ACCOUNT)
+                .where(ACCOUNT.ID.eq(accountSession.accountId()))
+                .fetchOptionalInto(Account.class));
     }
 
     @Override

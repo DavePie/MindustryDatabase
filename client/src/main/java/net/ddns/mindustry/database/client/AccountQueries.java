@@ -13,6 +13,10 @@ public interface AccountQueries {
     /// @return the account if found.
     Optional<Account> find(String username) throws DataAccessException;
 
+    /// Searches for an account using their IP and UUID. Requires the player to have a session.
+    /// @return the account if found.
+    Optional<Account> find(String ip, String uuid) throws DataAccessException;
+
     /// Does a login attempt and if successful, creates a new session with the provided duration.
     /// @param username the username of the account.
     /// @param password the password of the account.
