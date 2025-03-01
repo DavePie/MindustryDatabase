@@ -115,6 +115,7 @@ public class ClientCommands {
 
         database.auth().logout(account.get());
         player.team(Team.derelict);
+        player.unit().kill();
         player.sendMessage("Logged out successfully.");
     }
 
