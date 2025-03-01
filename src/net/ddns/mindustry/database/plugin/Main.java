@@ -24,6 +24,7 @@ public class Main extends Plugin {
         Configs.load();
         Events.load();
         net.ddns.mindustry.database.plugin.Commands.CommandHandler.load(); // oops...
+        ChatFilters.load();
 
         database = Utilities.newDatabase();
 

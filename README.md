@@ -32,6 +32,7 @@ command.
 maximum duration, then the user's session will become invalid when the user joins.
 
 # Commands
+## Server
 - `reconnect` - Reconnects the Mindustry server to the database.
 - `register-server <name>` - Registers the server into the database.
 - `deregister-server [id]` - Deregisters the server from the database. If an ID is provided, then it will deregister
@@ -41,6 +42,8 @@ that specific server.
 - `update-name <new-name>` - Updates the name of the server. Does **NOT** update the `serverName` configuration.
 - `list-servers` - Lists all the servers in the database.
 - `heartbeat-debug` - Sends a heartbeat to the database. DEBUG ONLY.
+## Client
+Refer to the `/help` command in-game.
 
 # Database Schema
 For the database schema, see [this file](client/tables.sql).
