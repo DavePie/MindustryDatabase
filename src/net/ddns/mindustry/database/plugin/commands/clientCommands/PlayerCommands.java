@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin.Commands;
+package net.ddns.mindustry.database.plugin.commands.clientCommands;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
@@ -13,25 +13,25 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.plugin.Configs.configSessionDuration;
 import static net.ddns.mindustry.database.plugin.Main.database;
 
-public class ClientCommands {
+public class PlayerCommands {
     public static void load(CommandHandler handler) {
         handler.register("login", "<username> <password>", "Logs you into your account. If you do" +
-                " not have an account, then use the /signup command.", ClientCommands::login);
+                " not have an account, then use the /signup command.", PlayerCommands::login);
 
         handler.register("signup", "<username> <display-name> <password> <password>", "Creates an" +
-                " account that you can log into with the [gold]/login[] command. You do need to type in the same" +
-                " password twice for the last two arguments. Keep in mind that the username you select is " +
-                " [blue]permanent[], meaning that you cannot change it once your account is made.",
-                ClientCommands::signup);
+                        " account that you can log into with the [gold]/login[] command. You do need to type in the same" +
+                        " password twice for the last two arguments. Keep in mind that the username you select is " +
+                        " [blue]permanent[], meaning that you cannot change it once your account is made.",
+                PlayerCommands::signup);
 
         handler.register("logout", "Logs you out of your current account and session.",
-                ClientCommands::logout);
+                PlayerCommands::logout);
 
         handler.register("change-display-name", "<new_display_name>", "Changes your display name.",
-                ClientCommands::changeDisplayName);
+                PlayerCommands::changeDisplayName);
 
         handler.register("change-password", "<new_password> <new_password> <old_password>",
-                "Changes your password to a new password.", ClientCommands::changePassword);
+                "Changes your password to a new password.", PlayerCommands::changePassword);
     }
 
     private static void login(String[] args, Player player) {
@@ -76,7 +76,7 @@ public class ClientCommands {
         String displayName = args[1];
         String password = args[2];
         String passwordVerification = args[3];  // third argument provided by the player. Mostly to ensure that their
-                                                // password are typed in correctly.
+        // password are typed in correctly.
 
         if (!Objects.equals(password, passwordVerification)) {
             player.sendMessage("The passwords provided did not match. Please ensure that you've typed in your" +

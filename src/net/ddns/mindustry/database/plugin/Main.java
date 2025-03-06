@@ -4,8 +4,8 @@ import arc.util.CommandHandler;
 import arc.util.Log;
 import mindustry.mod.Plugin;
 import net.ddns.mindustry.database.client.Database;
-import net.ddns.mindustry.database.plugin.Commands.ClientCommands;
-import net.ddns.mindustry.database.plugin.Commands.ServerCommands;
+import net.ddns.mindustry.database.plugin.commands.clientCommands.ClientCommands;
+import net.ddns.mindustry.database.plugin.commands.ServerCommands;
 
 import java.util.logging.LogManager;
 
@@ -23,14 +23,12 @@ public class Main extends Plugin {
 
         Configs.load();
         Events.load();
-        net.ddns.mindustry.database.plugin.Commands.CommandHandler.load(); // oops...
+        net.ddns.mindustry.database.plugin.commands.CommandHandler.load(); // oops...
         ChatFilters.load();
 
-        database = Utilities.newDatabase();
+        Utilities.restartConfigDependentFeatures();
 
-        PeriodicTasks.load();
-
-        Log.debug("Database connection successful!");
+        Log.debug("Database plugin loaded.");
     }
 
     @Override

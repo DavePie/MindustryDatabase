@@ -1,9 +1,8 @@
-package net.ddns.mindustry.database.plugin.Commands;
+package net.ddns.mindustry.database.plugin.commands;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
 import mindustry.net.Administration;
-import net.ddns.mindustry.database.plugin.Main;
 import net.ddns.mindustry.database.plugin.Utilities;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 
@@ -18,7 +17,8 @@ public class ServerCommands {
     public static void load(CommandHandler handler) {
         // ---- Direct database stuff ----
 
-        handler.register("reconnect", "Reconnects to the database.", ServerCommands::reconnectDatabase);
+        handler.register("reload-configs", "Reloads anything that is dependent on the configuration of" +
+                " the server.", ServerCommands::reloadConfigs);
         handler.register("register-server", "<name>", "Registers the server to the database.",
                 ServerCommands::registerServer);
         handler.register("deregister-server", "[id]", "Deregisters the server from the database.",
@@ -35,10 +35,10 @@ public class ServerCommands {
                 ServerCommands::heartbeatDebug);
     }
 
-    public static void reconnectDatabase(String[] args) {
-        Main.database = Utilities.newDatabase();
+    private static void reloadConfigs(String[] args) {
+        Utilities.restartConfigDependentFeatures();
 
-        Log.info("Reconnection successful.");
+        Log.info("Finished reloading configurations.");
     }
 
     private static void registerServer(String[] args) {

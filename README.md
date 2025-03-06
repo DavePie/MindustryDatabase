@@ -33,7 +33,7 @@ maximum duration, then the user's session will become invalid when the user join
 
 # Commands
 ## Server
-- `reconnect` - Reconnects the Mindustry server to the database.
+- `reload-configs` - Reloads anything that is dependent on the configuration of the server.
 - `register-server <name>` - Registers the server into the database.
 - `deregister-server [id]` - Deregisters the server from the database. If an ID is provided, then it will deregister
 that specific server.

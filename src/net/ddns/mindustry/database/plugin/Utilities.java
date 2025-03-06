@@ -37,9 +37,19 @@ public class Utilities {
     }
 
     /**
-     * Restarts anything that is dependent upon the IP and port configurations of the server.
+     * Restarts anything that is dependent upon the IP and port configurations of the server. This is always ran at
+     * plugin initialization.
      */
     public static void restartConfigDependentFeatures() {
+        Main.database = newDatabase();
+
+        if (Main.database == null) {
+            Log.warn("Database connection cannot be established.");
+            Log.warn("Skipping configuration dependent features since database is null. If the configurations are" +
+                    " correct, then reload the configurations.");
+            return;
+        }
+
         PeriodicTasks.reload();
     }
 }
