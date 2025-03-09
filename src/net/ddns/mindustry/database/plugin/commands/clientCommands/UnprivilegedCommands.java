@@ -13,25 +13,25 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.plugin.Configs.configSessionDuration;
 import static net.ddns.mindustry.database.plugin.Main.database;
 
-public class PlayerCommands {
+public class UnprivilegedCommands {
     public static void load(CommandHandler handler) {
         handler.register("login", "<username> <password>", "Logs you into your account. If you do" +
-                " not have an account, then use the /signup command.", PlayerCommands::login);
+                " not have an account, then use the /signup command.", UnprivilegedCommands::login);
 
         handler.register("signup", "<username> <display-name> <password> <password>", "Creates an" +
                         " account that you can log into with the [gold]/login[] command. You do need to type in the same" +
                         " password twice for the last two arguments. Keep in mind that the username you select is " +
                         " [blue]permanent[], meaning that you cannot change it once your account is made.",
-                PlayerCommands::signup);
+                UnprivilegedCommands::signup);
 
         handler.register("logout", "Logs you out of your current account and session.",
-                PlayerCommands::logout);
+                UnprivilegedCommands::logout);
 
         handler.register("change-display-name", "<new_display_name>", "Changes your display name.",
-                PlayerCommands::changeDisplayName);
+                UnprivilegedCommands::changeDisplayName);
 
         handler.register("change-password", "<new_password> <new_password> <old_password>",
-                "Changes your password to a new password.", PlayerCommands::changePassword);
+                "Changes your password to a new password.", UnprivilegedCommands::changePassword);
     }
 
     private static void login(String[] args, Player player) {

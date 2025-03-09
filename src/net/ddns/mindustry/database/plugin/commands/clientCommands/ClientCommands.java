@@ -5,8 +5,8 @@ import net.ddns.mindustry.database.plugin.commands.clientCommands.moderation.Pri
 
 public class ClientCommands {
     public static void load(CommandHandler handler) {
-        PlayerCommands.load(handler);
-        net.ddns.mindustry.database.plugin.commands.clientCommands.moderation.PlayerCommands.load(handler);
+        UnprivilegedCommands.load(handler);
+        net.ddns.mindustry.database.plugin.commands.clientCommands.moderation.UnprivilegedCommands.load(handler);
         PrivilegedCommands.load(handler);
     }
 }
