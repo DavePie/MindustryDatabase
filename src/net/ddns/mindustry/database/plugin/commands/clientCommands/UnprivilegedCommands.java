@@ -2,21 +2,30 @@ package net.ddns.mindustry.database.plugin.commands.clientCommands;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
+import kotlin.Unit;
 import mindustry.game.Team;
+import mindustry.gen.Call;
 import mindustry.gen.Player;
 import net.ddns.mindustry.database.client.AccountQueries;
+import net.ddns.mindustry.database.plugin.Configs;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.segment.TextInput;
 
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static net.ddns.mindustry.database.plugin.Configs.configSessionDuration;
+import static net.ddns.mindustry.database.plugin.Constants.textInputHandler;
 import static net.ddns.mindustry.database.plugin.Main.database;
 
 public class UnprivilegedCommands {
+    private static HashMap<Player, String> playerToUsernameMap = new HashMap<>();
+
     public static void load(CommandHandler handler) {
-        handler.register("login", "<username> <password>", "Logs you into your account. If you do" +
-                " not have an account, then use the /signup command.", UnprivilegedCommands::login);
+//        handler.register("login", "<username> <password>", "Logs you into your account. If you do" +
+//                " not have an account, then use the /signup command.", UnprivilegedCommands::login);
+
+        handler.register("login", "Logs you into your account.", UnprivilegedCommands::login);
 
         handler.register("signup", "<username> <display-name> <password> <password>", "Creates an" +
                         " account that you can log into with the [gold]/login[] command. You do need to type in the same" +
@@ -34,41 +43,101 @@ public class UnprivilegedCommands {
                 "Changes your password to a new password.", UnprivilegedCommands::changePassword);
     }
 
+//    private static void login(String[] args, Player player) {
+//        String username = args[0];
+//        String password = args[1];
+//
+//        if (!configSessionDuration.isNum()) {
+//            Log.err("Session duration is not a number. Please ensure that you've entered a proper integer.");
+//            player.sendMessage("[scarlet]Command failed to run. Please contact an admin or staff member of this " +
+//                    "server.");
+//
+//            return;
+//        }
+//
+//        int duration = configSessionDuration.num();
+//        AccountQueries.LoginStatus loginResult = database.auth().login(username.strip(), password.toCharArray(),
+//                player.ip(), player.uuid(), duration);
+//
+//        if (loginResult instanceof AccountQueries.LoginStatus.WrongCredentials) {
+//            player.sendMessage("[scarlet]The credentials provided were invalid. Please ensure that you've entered " +
+//                    "the correct credentials and that you've signed up.");
+//            return;
+//        } else if (loginResult instanceof AccountQueries.LoginStatus.AlreadyLoggedIn) {
+//            player.sendMessage("Already signed in.");
+//            return;
+//        } else if (loginResult instanceof AccountQueries.LoginStatus.LoggedIn) {
+//            String displayName = ((AccountQueries.LoginStatus.LoggedIn) loginResult).account().displayName();
+//
+//            player.team(Team.sharded);
+//            player.name(displayName);
+//            player.sendMessage("Logged in successfully.");
+//            return;
+//        }
+//
+//        player.sendMessage("An unknown status was received. Please contact a staff member of this server.");
+//        Log.warn("The login method returned a status that is not accounted for.");
+//        Log.warn(String.format("Returned status: %s", loginResult.getClass()));
+//    }
+
     private static void login(String[] args, Player player) {
-        String username = args[0];
-        String password = args[1];
+        Call.textInput(player.con(), 69420, "lorem ipsum", "dolor sit amet", -1, "",
+                false);
 
-        if (!configSessionDuration.isNum()) {
-            Log.err("Session duration is not a number. Please ensure that you've entered a proper integer.");
-            player.sendMessage("[scarlet]Command failed to run. Please contact an admin or staff member of this " +
-                    "server.");
+//        TextInput textInput = new TextInput(player, "[gold]Login (1/2)", "Type in your username.",
+//                UnprivilegedCommands::loginUsername, 512, "", true, textInputHandler);
+//        textInput.show();
 
-            return;
+//        textInputHandler.addTextInput(player, "[gold]Login (1/2)", "Type in your username.",
+//                UnprivilegedCommands::loginUsername, 512, "lorem", true).show();
+    }
+
+    private static Unit loginUsername(Player player, String text) {
+        if (text == null) {
+            Log.warn("Cancelling login at username step.");
+            return null;
         }
 
-        int duration = configSessionDuration.num();
-        AccountQueries.LoginStatus loginResult = database.auth().login(username.strip(), password.toCharArray(),
-                player.ip(), player.uuid(), duration);
+        playerToUsernameMap.put(player, text);
+
+        TextInput textInput = new TextInput(player, "[gold]Login (2/2)", "Type in your password.",
+                UnprivilegedCommands::loginPassword, 1024, "", true, textInputHandler);
+        textInput.show();
+
+        return Unit.INSTANCE;
+    }
+
+    private static Unit loginPassword(Player player, String text) {
+        if (text == null) {
+            Log.warn("Cancelling login at password step.");
+            return null;
+        }
+
+        String username = playerToUsernameMap.get(player);
+        AccountQueries.LoginStatus loginResult = database.auth().login(username, text.toCharArray(), player.ip(),
+                player.uuid(), Configs.configSessionDuration.num());
 
         if (loginResult instanceof AccountQueries.LoginStatus.WrongCredentials) {
             player.sendMessage("[scarlet]The credentials provided were invalid. Please ensure that you've entered " +
                     "the correct credentials and that you've signed up.");
-            return;
+            return null;
         } else if (loginResult instanceof AccountQueries.LoginStatus.AlreadyLoggedIn) {
             player.sendMessage("Already signed in.");
-            return;
+            return null;
         } else if (loginResult instanceof AccountQueries.LoginStatus.LoggedIn) {
             String displayName = ((AccountQueries.LoginStatus.LoggedIn) loginResult).account().displayName();
 
             player.team(Team.sharded);
             player.name(displayName);
             player.sendMessage("Logged in successfully.");
-            return;
+            return null;
         }
 
         player.sendMessage("An unknown status was received. Please contact a staff member of this server.");
         Log.warn("The login method returned a status that is not accounted for.");
         Log.warn(String.format("Returned status: %s", loginResult.getClass()));
+
+        return Unit.INSTANCE;
     }
 
     private static void signup(String[] args, Player player) {
