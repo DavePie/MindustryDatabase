@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin.commands;
+package net.ddns.mindustry.database.javaPlugin.commands;
 
 import mindustry.gen.Player;
 

@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import net.ddns.mindustry.segment.MainKt;
 import net.ddns.mindustry.segment.TextInputHandler;

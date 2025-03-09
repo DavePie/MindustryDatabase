@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import mindustry.net.Administration;
 

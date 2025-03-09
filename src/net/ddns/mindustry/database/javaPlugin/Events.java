@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import arc.util.Log;
 import mindustry.game.EventType;
@@ -11,8 +11,8 @@ import net.ddns.mindustry.database.schema.tables.pojos.Server;
 
 import java.util.Optional;
 
-import static net.ddns.mindustry.database.plugin.Configs.configServerIP;
-import static net.ddns.mindustry.database.plugin.Main.database;
+import static net.ddns.mindustry.database.javaPlugin.Configs.configServerIP;
+import static net.ddns.mindustry.database.javaPlugin.Main.database;
 
 public class Events {
     protected static void load() {

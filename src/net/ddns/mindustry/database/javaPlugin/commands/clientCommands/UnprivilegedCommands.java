@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin.commands.clientCommands;
+package net.ddns.mindustry.database.javaPlugin.commands.clientCommands;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
@@ -7,7 +7,7 @@ import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.gen.Player;
 import net.ddns.mindustry.database.client.AccountQueries;
-import net.ddns.mindustry.database.plugin.Configs;
+import net.ddns.mindustry.database.javaPlugin.Configs;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.segment.TextInput;
 
@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static net.ddns.mindustry.database.plugin.Constants.textInputHandler;
-import static net.ddns.mindustry.database.plugin.Main.database;
+import static net.ddns.mindustry.database.javaPlugin.Constants.textInputHandler;
+import static net.ddns.mindustry.database.javaPlugin.Main.database;
 
 public class UnprivilegedCommands {
     private static HashMap<Player, String> playerToUsernameMap = new HashMap<>();

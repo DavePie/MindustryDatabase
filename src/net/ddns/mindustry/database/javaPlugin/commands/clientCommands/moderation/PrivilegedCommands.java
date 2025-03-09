@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin.commands.clientCommands.moderation;
+package net.ddns.mindustry.database.javaPlugin.commands.clientCommands.moderation;
 
 import arc.util.CommandHandler;
 

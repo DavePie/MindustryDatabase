@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import arc.util.Log;
 import mindustry.net.Administration;
@@ -7,9 +7,9 @@ import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-import static net.ddns.mindustry.database.plugin.Configs.configServerIP;
-import static net.ddns.mindustry.database.plugin.Constants.SERVER_IP_PORT_ERROR;
-import static net.ddns.mindustry.database.plugin.Main.database;
+import static net.ddns.mindustry.database.javaPlugin.Configs.configServerIP;
+import static net.ddns.mindustry.database.javaPlugin.Constants.SERVER_IP_PORT_ERROR;
+import static net.ddns.mindustry.database.javaPlugin.Main.database;
 
 public class PeriodicTasks {
     private static Server server;

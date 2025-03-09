@@ -1,17 +1,17 @@
-package net.ddns.mindustry.database.plugin.commands;
+package net.ddns.mindustry.database.javaPlugin.commands;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
 import mindustry.net.Administration;
-import net.ddns.mindustry.database.plugin.Utilities;
+import net.ddns.mindustry.database.javaPlugin.Utilities;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 
 import java.util.List;
 import java.util.Optional;
 
-import static net.ddns.mindustry.database.plugin.Configs.configServerIP;
-import static net.ddns.mindustry.database.plugin.Constants.SERVER_IP_PORT_ERROR;
-import static net.ddns.mindustry.database.plugin.Main.database;
+import static net.ddns.mindustry.database.javaPlugin.Configs.configServerIP;
+import static net.ddns.mindustry.database.javaPlugin.Constants.SERVER_IP_PORT_ERROR;
+import static net.ddns.mindustry.database.javaPlugin.Main.database;
 
 public class ServerCommands {
     public static void load(CommandHandler handler) {

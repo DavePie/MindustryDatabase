@@ -33,15 +33,18 @@ maximum duration, then the user's session will become invalid when the user join
 
 # Commands
 ## Server
-- `reload-configs` - Reloads anything that is dependent on the configuration of the server.
 - `register-server <name>` - Registers the server into the database.
 - `deregister-server [id]` - Deregisters the server from the database. If an ID is provided, then it will deregister
 that specific server.
+- `list-servers` - Lists all the servers in the database.
+
+### Work-in-progress (Conversion to Kotlin)
+- `reload-configs` - Reloads anything that is dependent on the configuration of the server.
 - `update-ip <new-ip>` - Updates the IP of the database entry for the server.
 - `update-port <new-port>` - Updates the port of the database entry for the server.
 - `update-name <new-name>` - Updates the name of the server. Does **NOT** update the `serverName` configuration.
-- `list-servers` - Lists all the servers in the database.
 - `heartbeat-debug` - Sends a heartbeat to the database. DEBUG ONLY.
+
 ## Client
 Refer to the `/help` command in-game.
 

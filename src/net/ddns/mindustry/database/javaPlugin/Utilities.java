@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import arc.util.Log;
 import net.ddns.mindustry.database.client.Database;
@@ -6,7 +6,7 @@ import net.ddns.mindustry.database.client.SecurityConfig;
 
 import java.security.NoSuchAlgorithmException;
 
-import static net.ddns.mindustry.database.plugin.Configs.*;
+import static net.ddns.mindustry.database.javaPlugin.Configs.*;
 
 public class Utilities {
     /**

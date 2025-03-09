@@ -1,11 +1,11 @@
-package net.ddns.mindustry.database.plugin;
+package net.ddns.mindustry.database.javaPlugin;
 
 import arc.util.CommandHandler;
 import arc.util.Log;
 import mindustry.mod.Plugin;
 import net.ddns.mindustry.database.client.Database;
-import net.ddns.mindustry.database.plugin.commands.clientCommands.ClientCommands;
-import net.ddns.mindustry.database.plugin.commands.ServerCommands;
+import net.ddns.mindustry.database.javaPlugin.commands.clientCommands.ClientCommands;
+import net.ddns.mindustry.database.javaPlugin.commands.ServerCommands;
 
 import java.util.logging.LogManager;
 
@@ -23,7 +23,7 @@ public class Main extends Plugin {
 
         Configs.load();
         Events.load();
-        net.ddns.mindustry.database.plugin.commands.CommandHandler.load(); // oops...
+        net.ddns.mindustry.database.javaPlugin.commands.CommandHandler.load(); // oops...
         ChatFilters.load();
 
         Utilities.restartConfigDependentFeatures();
