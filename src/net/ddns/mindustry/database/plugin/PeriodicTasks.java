@@ -36,7 +36,7 @@ public class PeriodicTasks {
     }
 
     public static void reload() {
-        stop();
+        if (scheduler != null) stop();
         load();
     }
 
