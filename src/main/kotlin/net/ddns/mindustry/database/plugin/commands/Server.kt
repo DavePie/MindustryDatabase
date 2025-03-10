@@ -6,6 +6,7 @@ import mindustry.net.Administration
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
 import net.ddns.mindustry.database.plugin.configServerIP
+import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
 fun loadServerCommands(handler: CommandHandler) {
     handler.register("register-server", "<server-name>", "Registers the server into the " +
@@ -13,6 +14,14 @@ fun loadServerCommands(handler: CommandHandler) {
     handler.register("deregister-server", "[id]", "Deregisters the server from the database.",
         ::deregisterServer)
     handler.register("list-servers", "Lists all servers in the database.", ::listServers)
+
+
+    handler.register("update-ip", "<new-ip>", "Updates the server's IP in the database.",
+        ::updateIP)
+    handler.register("update-port", "<new-port>", "Updates the port of the server. You may need" +
+            " to restart the server for the changes to take effect.", ::updatePort)
+    handler.register("update-name", "<new-name>", "Updates the name of the server. This does " +
+            "not affect the name configuration.", ::updateName)
 }
 
 private fun registerServer(args: Array<String>) {
@@ -75,4 +84,50 @@ private fun listServers(args: Array<String>) { // args is required
         if (toOutput!!.isBlank()) continue
         println(toOutput)
     }
+}
+
+private fun updateIP(args: Array<String>) {
+    val newIP = args[0]
+    val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
+
+    if (server.isEmpty) {
+        Log.err(SERVER_IP_PORT_ERROR)
+        return
+    }
+
+    database!!.server().update(server.get(), newIP, null, null)
+    configServerIP.set(newIP)
+    restartConfigDependentFeatures()
+
+    Log.info("The IP of the server was updated successfully.")
+}
+
+private fun updatePort(args: Array<String>) {
+    val newPort = args[0].toInt()
+    val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
+
+    if (server.isEmpty) {
+        Log.err(SERVER_IP_PORT_ERROR)
+        return
+    }
+
+    database!!.server().update(server.get(), null, newPort, null)
+    Administration.Config.port.set(newPort)
+    restartConfigDependentFeatures()
+
+    Log.info("Port updated. Keep in mind that you may need to restart the server for these changes to take" +
+                " effect.")
+}
+
+private fun updateName(args: Array<String>) {
+    val newName = args[0]
+    val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
+
+    if (server.isEmpty) {
+        Log.err(SERVER_IP_PORT_ERROR)
+        return
+    }
+
+    database!!.server().update(server.get(), null, null, newName)
+    Log.info("The name of the server was updated successfully.")
 }
