@@ -5,6 +5,7 @@ import arc.util.Log
 import mindustry.mod.Plugin
 import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.plugin.commands.loadServerCommands
+import net.ddns.mindustry.database.plugin.commands.client.loadClientCommands
 import java.util.logging.LogManager
 
 @Suppress("unused")
@@ -24,7 +25,7 @@ class Main : Plugin() {
     }
 
     override fun registerClientCommands(handler: CommandHandler?) {
-
+        loadClientCommands(handler!!)
     }
 
     override fun registerServerCommands(handler: CommandHandler?) {
