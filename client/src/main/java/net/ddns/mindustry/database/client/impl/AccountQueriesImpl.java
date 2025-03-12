@@ -228,14 +228,14 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public PasswordUpdateStatus updatePassword(Account account, char[] newPassword, char[] oldPassword) {
+    public PasswordUpdateStatus updatePassword(Account account, char[] newPassword) {
         Objects.requireNonNull(account);
         Objects.requireNonNull(newPassword);
 
         final byte[] hashedNewPassword = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
 
-        final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
-        if (!security().passHash().verify(dbHash, oldPassword)) return new PasswordUpdateStatus.InvalidPassword();
+//        final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
+//        if (!security().passHash().verify(dbHash, oldPassword)) return new PasswordUpdateStatus.InvalidPassword();
 
         dsl.update(ACCOUNT)
                 .set(ACCOUNT.PASSWORD, hashedNewPassword)

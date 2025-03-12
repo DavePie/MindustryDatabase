@@ -43,7 +43,7 @@ public interface AccountQueries {
     /// Updates the password of an account.
     /// @param newPassword The new password.
     /// @param oldPassword The old password.
-    PasswordUpdateStatus updatePassword(Account account, char[] newPassword, char[] oldPassword) throws DataAccessException;
+    PasswordUpdateStatus updatePassword(Account account, char[] newPassword) throws DataAccessException;
 
     sealed interface LoginStatus {
 
@@ -91,7 +91,5 @@ public interface AccountQueries {
 
     sealed interface PasswordUpdateStatus {
         record Updated() implements PasswordUpdateStatus {}
-
-        record InvalidPassword() implements PasswordUpdateStatus {}
     }
 }
