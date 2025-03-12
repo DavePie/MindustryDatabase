@@ -221,7 +221,7 @@ public class UnprivilegedCommands {
         AccountQueries.PasswordUpdateStatus status = database.auth().updatePassword(account.get(),
                 newPassword.toCharArray(), oldPassword.toCharArray());
 
-        if (status instanceof AccountQueries.PasswordUpdateStatus.InvalidPassword) {
+        if (status instanceof AccountQueries.PasswordUpdateStatus.WrongPassword) {
             player.sendMessage("[scarlet]The old password that you provided was invalid.");
             return;
         }

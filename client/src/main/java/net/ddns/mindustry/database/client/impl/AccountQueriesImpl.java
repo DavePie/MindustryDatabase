@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
-
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implements AccountQueries {
@@ -107,39 +106,43 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
         final byte[] session = createSessionHash(ip, uuid);
 
-        return dsl.transactionResult(ctx -> {
+        try {
+            return dsl.transactionResult(ctx -> {
 
-            final DSLContext tDsl = ctx.dsl();
-            // I return if the user is already authenticated.
-            if (sessionAccountId(tDsl, session).isPresent()) return new LoginStatus.AlreadyLoggedIn();
+                final DSLContext tDsl = ctx.dsl();
+                // I return if the user is already authenticated.
+                if (sessionAccountId(tDsl, session).isPresent()) return new LoginStatus.AlreadyLoggedIn();
 
-            // Computationally expensive hash.
-            // I hash and update it on the database, because if the password is correct,
-            // I want to update it using the latest security configuration.
-            // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
-            // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
-            final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
+                // Computationally expensive hash.
+                // I hash and update it on the database, because if the password is correct,
+                // I want to update it using the latest security configuration.
+                // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
+                // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
+                final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
 
-            final Account account = find(tDsl, username).orElse(null);
-            if (account == null) {
-                security().hashPass(password); // Wasteful operation to avoid username scanning.
-                return new LoginStatus.WrongCredentials();
-            }
+                final Account account = find(tDsl, username).orElse(null);
+                if (account == null) {
+                    security().hashPass(password); // Wasteful operation to avoid username scanning.
+                    return new LoginStatus.WrongCredentials();
+                }
 
-            final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
-            if (!security().passHash().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
+                final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
+                if (!security().passHash().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
 
-            tDsl.update(ACCOUNT)
-                    // I update the password with the latest argon2 configuration.
-                    .set(ACCOUNT.PASSWORD, hashedPassword)
-                    .where(ACCOUNT.ID.eq(account.id()))
-                    .execute();
+                tDsl.update(ACCOUNT)
+                        // I update the password with the latest argon2 configuration.
+                        .set(ACCOUNT.PASSWORD, hashedPassword)
+                        .where(ACCOUNT.ID.eq(account.id()))
+                        .execute();
 
-            // I create a new session for the user.
-            createSession(tDsl, account.id(), session, durationHours);
+                // I create a new session for the user.
+                createSession(tDsl, account.id(), session, durationHours);
 
-            return new LoginStatus.LoggedIn(account);
-        });
+                return new LoginStatus.LoggedIn(account);
+            });
+        } finally {
+            security().passHash().wipeArray(password);
+        }
     }
 
     @Override
@@ -162,16 +165,20 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
         // TODO Account checking.
 
-        final Account account = dsl.insertInto(ACCOUNT)
-                .set(ACCOUNT.USERNAME, username)
-                .set(ACCOUNT.DISPLAY_NAME, displayName)
-                .set(ACCOUNT.PASSWORD, hashedPass)
-                .onConflict(ACCOUNT.USERNAME)
-                .doNothing()
-                .returning(ACCOUNT)
-                .fetchOneInto(Account.class);
+        try {
+            final Account account = dsl.insertInto(ACCOUNT)
+                    .set(ACCOUNT.USERNAME, username)
+                    .set(ACCOUNT.DISPLAY_NAME, displayName)
+                    .set(ACCOUNT.PASSWORD, hashedPass)
+                    .onConflict(ACCOUNT.USERNAME)
+                    .doNothing()
+                    .returning(ACCOUNT)
+                    .fetchOneInto(Account.class);
 
-        return account == null ? new SignupStatus.UsernameInUse() : new SignupStatus.Created(account);
+            return account == null ? new SignupStatus.UsernameInUse() : new SignupStatus.Created(account);
+        } finally {
+            security.passHash().wipeArray(password);
+        }
     }
 
     @Override
@@ -217,31 +224,40 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public void updateDisplayName(Account account, String newDisplayName) {
+    public void updateDisplayName(Account account, String displayName) {
+
         Objects.requireNonNull(account);
-        Objects.requireNonNull(newDisplayName);
+        Objects.requireNonNull(displayName);
 
         dsl.update(ACCOUNT)
-                .set(ACCOUNT.DISPLAY_NAME, newDisplayName)
+                .set(ACCOUNT.DISPLAY_NAME, displayName)
                 .where(ACCOUNT.ID.eq(account.id()))
                 .execute();
     }
 
     @Override
-    public PasswordUpdateStatus updatePassword(Account account, char[] newPassword) {
+    public PasswordUpdateStatus updatePassword(Account account, char[] oldPassword, char[] newPassword) {
+
         Objects.requireNonNull(account);
         Objects.requireNonNull(newPassword);
 
-        final byte[] hashedNewPassword = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
+        final var dbPassword = new String(account.password(), StandardCharsets.UTF_8);
 
-//        final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
-//        if (!security().passHash().verify(dbHash, oldPassword)) return new PasswordUpdateStatus.InvalidPassword();
+        try {
 
-        dsl.update(ACCOUNT)
-                .set(ACCOUNT.PASSWORD, hashedNewPassword)
-                .where(ACCOUNT.ID.eq(account.id()))
-                .execute();
+            // I do this here to take the same amount of time if the old password is wrong.
+            final byte[] hashed = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
+            if (!security().passHash().verify(dbPassword, oldPassword)) return new PasswordUpdateStatus.WrongPassword();
 
-        return new PasswordUpdateStatus.Updated();
+            dsl.update(ACCOUNT)
+                    .set(ACCOUNT.PASSWORD, hashed)
+                    .where(ACCOUNT.ID.eq(account.id()))
+                    .execute();
+
+            return new PasswordUpdateStatus.Updated();
+        } finally {
+            security.passHash().wipeArray(oldPassword);
+            security.passHash().wipeArray(newPassword);
+        }
     }
 }

@@ -22,6 +22,7 @@ public interface AccountQueries {
     /// @param password the password of the account.
     /// @param ip the ip of player used
     /// @param durationHours the duration of the session in hours.
+    /// @apiNote the password will be wiped after calling this method.
     LoginStatus login(String username, char[] password, String ip, String uuid, int durationHours) throws DataAccessException;
 
     void logout(Account account) throws DataAccessException;
@@ -38,12 +39,13 @@ public interface AccountQueries {
     void leavesServer(Account account) throws DataAccessException;
 
     /// Updates the display name of an account.
-    void updateDisplayName(Account account, String newDisplayName) throws DataAccessException;
+    void updateDisplayName(Account account, String displayName) throws DataAccessException;
 
     /// Updates the password of an account.
     /// @param newPassword The new password.
     /// @param oldPassword The old password.
-    PasswordUpdateStatus updatePassword(Account account, char[] newPassword) throws DataAccessException;
+    /// @apiNote The oldPassword and newPassword will be wiped after calling this method.
+    PasswordUpdateStatus updatePassword(Account account, char[] oldPassword, char[] newPassword) throws DataAccessException;
 
     sealed interface LoginStatus {
 
@@ -63,9 +65,10 @@ public interface AccountQueries {
 
         record InvalidName() implements SignupStatus {}
 
+        ///  When the password does not fit security criteria.
         record InvalidPassword() implements SignupStatus {}
 
-        /// The username that was provided by the user is already in use.
+        /// The username provided by the user is already in use.
         record UsernameInUse() implements SignupStatus {}
     }
 
@@ -77,11 +80,6 @@ public interface AccountQueries {
         /// The account is already connected in this or another server.
         record AlreadyInServer() implements JoinStatus {}
 
-        /// The account session has expired, and the account must re-authenticate.
-        /// @deprecated to simplify the authentication logic, this has been moved inside {@link NotAuthenticated}.
-        @Deprecated(forRemoval = true)
-        record SessionExpired() implements JoinStatus {}
-
         /// The account is not authenticated.
         record NotAuthenticated() implements JoinStatus {}
 
@@ -90,6 +88,13 @@ public interface AccountQueries {
     }
 
     sealed interface PasswordUpdateStatus {
+
+        /// When the old password is not valid.
+        record WrongPassword() implements PasswordUpdateStatus {}
+
+        ///  When the new password does not fit security criteria.
+        record InvalidPassword() implements PasswordUpdateStatus {}
+
         record Updated() implements PasswordUpdateStatus {}
     }
 }
