@@ -2,7 +2,6 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.SecurityConfig;
-import net.ddns.mindustry.database.schema.tables.pojos.AccountSession;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
@@ -84,17 +83,15 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
     @Override
     public Optional<Account> find(String ip, String uuid) {
-        byte[] sessionHash = createSessionHash(ip, uuid);
 
-        Optional<AccountSession> session = dsl.selectFrom(ACCOUNT_SESSION)
-                .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(sessionHash))
-                .fetchOptionalInto(AccountSession.class);
+        Objects.requireNonNull(ip);
+        Objects.requireNonNull(uuid);
 
-        // I saw an IDE warning that told me that the expression can be shortened. To my surprise, when clicking on it,
-        // it cast a dark magic spell. Don't ask me how this line works. I do not know how it works.
-        return session.flatMap(accountSession -> dsl.selectFrom(ACCOUNT)
-                .where(ACCOUNT.ID.eq(accountSession.accountId()))
-                .fetchOptionalInto(Account.class));
+        return sessionAccountId(dsl, createSessionHash(ip, uuid))
+                .stream()
+                .mapToObj(accountId -> find(dsl, accountId))
+                .filter(Objects::nonNull)
+                .findFirst();
     }
 
     @Override

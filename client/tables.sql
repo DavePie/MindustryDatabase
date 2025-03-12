@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS account(
     )
 );
 
--- TODO Server authorization based on user role.
+-- TODO Server authorization based on server_whitelist.
 CREATE TABLE IF NOT EXISTS server(
 
     id               SERIAL       PRIMARY KEY,
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS ip_blacklist(
 CREATE TABLE IF NOT EXISTS role(
 
     id       SERIAL       PRIMARY KEY,
-    name     VARCHAR(255) NOT NULL,
+    name     VARCHAR(255) NOT NULL UNIQUE,
     -- The order of which the roles are displayed, smallest first.
     priority SMALLINT     NOT NULL,
     symbol   VARCHAR(16)  NOT NULL,
@@ -227,7 +227,8 @@ CREATE TABLE IF NOT EXISTS account_role(
     role_id    INT    NOT NULL,
 
     CONSTRAINT fk_roles_user FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE,
-    CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE
+    CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE,
+    CONSTRAINT u_account_role UNIQUE(account_id, role_id)
 );
 
 CREATE TABLE IF NOT EXISTS role_permission(
@@ -237,5 +238,6 @@ CREATE TABLE IF NOT EXISTS role_permission(
     permission_id INT    NOT NULL,
 
     CONSTRAINT fk_role       FOREIGN KEY(role_id)       REFERENCES role(id)       ON DELETE CASCADE,
-    CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES permission(id) ON DELETE CASCADE
+    CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES permission(id) ON DELETE CASCADE,
+    CONSTRAINT u_role_permission UNIQUE(role_id, permission_id)
 );

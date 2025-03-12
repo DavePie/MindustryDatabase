@@ -15,4 +15,6 @@ public interface Database {
     ServerQueries server();
 
     PunishmentQueries punishment();
+
+    RoleQueries role();
 }

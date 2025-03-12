@@ -12,6 +12,7 @@ public final class DatabaseImpl implements Database {
     private final AccountQueriesImpl auth;
     private final ServerQueriesImpl server;
     private final PunishmentQueriesImpl punishment;
+    private final RoleQueriesImpl role;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
 
@@ -28,6 +29,7 @@ public final class DatabaseImpl implements Database {
         this.auth = new AccountQueriesImpl(dsl, config);
         this.server = new ServerQueriesImpl(dsl);
         this.punishment = new PunishmentQueriesImpl(dsl, auth);
+        this.role = new RoleQueriesImpl(dsl);
     }
 
     @Override
@@ -48,5 +50,10 @@ public final class DatabaseImpl implements Database {
     @Override
     public PunishmentQueries punishment() {
         return punishment;
+    }
+
+    @Override
+    public RoleQueries role() {
+        return role;
     }
 }
