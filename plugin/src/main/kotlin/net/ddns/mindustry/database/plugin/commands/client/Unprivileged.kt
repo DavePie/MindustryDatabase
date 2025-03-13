@@ -5,6 +5,7 @@ import arc.util.Log
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Player
+import net.ddns.mindustry.database.client.AccountQueries
 import net.ddns.mindustry.database.client.AccountQueries.LoginStatus.*
 import net.ddns.mindustry.database.client.AccountQueries.SignupStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
@@ -29,14 +30,14 @@ private fun login(args: Array<String>, player: Player) {
     textInputHandler.addTextInput(
         "[gold]Login (1/2)",
         "Type in your username",
-        ::loginUsername,
+        ::callbackLoginUsername,
         32,
         "",
         false
     ).show()
 }
 
-private fun loginUsername(player: Player, text: String?) {
+private fun callbackLoginUsername(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling login at username step.")
         return
@@ -47,11 +48,11 @@ private fun loginUsername(player: Player, text: String?) {
     textInputHandler.addTextInput(
         "[gold]Login (2/2)",
         "Type in your password",
-        ::loginPassword
+        ::callbackLoginPassword
     ).show()
 }
 
-private fun loginPassword(player: Player, text: String?) {
+private fun callbackLoginPassword(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling login at password step.")
         playerToUsernameMap.remove(player)
@@ -97,7 +98,7 @@ private fun signup(args: Array<String>, player: Player) {
     ).show()
 }
 
-private fun callbackSignupUsername(player: Player, text: String?) {
+private fun callbackSignupUsername(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling signup at username step.")
         return
@@ -112,7 +113,7 @@ private fun callbackSignupUsername(player: Player, text: String?) {
     ).show()
 }
 
-private fun callbackSignupDisplayName(player: Player, text: String?) {
+private fun callbackSignupDisplayName(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling signup at display name step.")
         return
@@ -127,7 +128,7 @@ private fun callbackSignupDisplayName(player: Player, text: String?) {
     ).show()
 }
 
-private fun callbackSignupPassword(player: Player, text: String?) {
+private fun callbackSignupPassword(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling signup at password step.")
         return
@@ -182,7 +183,7 @@ private fun changeDisplayName(args: Array<String>, player: Player) {
     ).show()
 }
 
-private fun callbackChangeDisplayName(player: Player, text: String?) {
+private fun callbackChangeDisplayName(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling display name change at display name step.")
         return
@@ -204,18 +205,33 @@ private fun callbackChangeDisplayName(player: Player, text: String?) {
 
 private fun changePassword(args: Array<String>, player: Player) {
     textInputHandler.addTextInput(
-        "[gold]Change password",
-        "Type in your new password",
-        ::callbackChangePassword
+        "[gold]Change password (1/2)",
+        "Type in your current password",
+        ::callbackChangePasswordCurrentPassword
     ).show()
 }
 
-private fun callbackChangePassword(player: Player, text: String?) {
+private fun callbackChangePasswordCurrentPassword(player: Player, text: String?, args: Array<String>) {
+    if (text == null) {
+        Log.warn("Cancelling password change at current password step.")
+        return
+    }
+
+    textInputHandler.addTextInput(
+        "[gold]Change password (2/2)",
+        "Type in the new password",
+        ::callbackChangePasswordNewPassword,
+        args = arrayOf(text)
+    ).show()
+}
+
+private fun callbackChangePasswordNewPassword(player: Player, text: String?, args: Array<String>) {
     if (text == null) {
         Log.warn("Cancelling password change at password step.")
         return
     }
 
+    val oldPassword = args[0]
     val account = database!!.auth().find(player.ip(), player.uuid())
 
     if (account.isEmpty) {
@@ -223,6 +239,13 @@ private fun callbackChangePassword(player: Player, text: String?) {
         return
     }
 
-    database!!.auth().updatePassword(account.get(), text.toCharArray())
-    player.sendMessage("Password changed successfully.")
+    val result = database!!.auth().updatePassword(account.get(), oldPassword.toCharArray(), text.toCharArray())
+
+    when (result) {
+        is AccountQueries.PasswordUpdateStatus.WrongPassword -> Call.infoMessage(player.con(), "[scarlet]" +
+                "Wrong password. Ensure that you've typed in the right password.")
+        is AccountQueries.PasswordUpdateStatus.InvalidPassword -> Call.infoMessage(player.con(), "[scarlet]" +
+                "The new password is invalid and does not meet security requirements.")
+        is AccountQueries.PasswordUpdateStatus.Updated -> player.sendMessage("Password changed successfully.")
+    }
 }

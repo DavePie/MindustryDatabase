@@ -1,6 +1,5 @@
 apply plugin: "java"
 apply plugin: 'maven-publish'
-apply plugin: 'kotlin'
 
 group = 'com.github.mindustry-ddns-net'
 version '1.0'
@@ -16,32 +15,19 @@ repositories{
     maven{ url 'https://www.jitpack.io' }
 }
 
-ext{
-    //the build number that this plugin is made for
-    mindustryVersion = 'v145'
-    jabelVersion = "93fde537c7"
-}
-
 tasks.withType(Jar).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-    annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
-//    implementation 'org.xerial:sqlite-jdbc:3.30.1'
-    implementation project(':client')
-
-    implementation 'com.github.mindustry-ddns-net:segment:development-SNAPSHOT'
-
-    implementation libs.jooq
-    implementation libs.jooqPostgresqlExtension
+    implementation project(":plugin")
 }
 
 jar{
     dependsOn("client:jar")
+    dependsOn("plugin:jar")
+
     // The javaPlugin is deprecated.
     sourceSets {
         main {
@@ -67,26 +53,9 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'net.ddns.mindustry'
             artifactId = 'MindustryDatabase'
-            version = '1.1'
+            version = '1.0'
 
             from components.java
         }
     }
-}
-
-wrapper {
-    gradleVersion = "7.3.3"
-    distributionType = Wrapper.DistributionType.ALL
-}
-buildscript {
-    ext.kotlin_version = '2.1.10'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-kotlin {
-    jvmToolchain(21)
 }
