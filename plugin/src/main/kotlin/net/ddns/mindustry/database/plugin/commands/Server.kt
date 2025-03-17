@@ -5,6 +5,7 @@ import arc.util.Log
 import mindustry.net.Administration
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
+import net.ddns.mindustry.database.plugin.configPassword
 import net.ddns.mindustry.database.plugin.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
@@ -22,6 +23,10 @@ fun loadServerCommands(handler: CommandHandler) {
             " to restart the server for the changes to take effect.", ::updatePort)
     handler.register("update-name", "<new-name>", "Updates the name of the server. This does " +
             "not affect the name configuration.", ::updateName)
+
+
+    handler.register("remove-password-config", "Removes the entry for the password configuration.",
+        ::removePasswordConfig)
 }
 
 private fun registerServer(args: Array<String>) {
@@ -130,4 +135,10 @@ private fun updateName(args: Array<String>) {
 
     database!!.server().update(server.get(), null, null, newName)
     Log.info("The name of the server was updated successfully.")
+}
+
+private fun removePasswordConfig(args: Array<String>) {
+    configPassword.set("")
+    restartConfigDependentFeatures()
+    Log.info("Removed password configuration.")
 }

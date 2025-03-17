@@ -51,4 +51,6 @@ fun restartConfigDependentFeatures() {
         )
         return
     }
+
+    restartHeartbeatScheduler()
 }
