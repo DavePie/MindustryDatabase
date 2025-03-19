@@ -27,6 +27,7 @@ fun loadServerCommands(handler: CommandHandler) {
 
     handler.register("remove-password-config", "Removes the entry for the password configuration.",
         ::removePasswordConfig)
+    handler.register("reload-configurations", "Reloads any configuration dependent features.", ::reloadConfigurations)
 }
 
 private fun registerServer(args: Array<String>) {
@@ -35,6 +36,7 @@ private fun registerServer(args: Array<String>) {
     val port = Administration.Config.port.num()
 
     database!!.server().add(ip, port, name)
+    restartConfigDependentFeatures()
     Log.info("Server registered to database.")
 }
 
@@ -61,6 +63,7 @@ private fun deregisterServer(args: Array<String>) {
     }
 
     database!!.server().remove(if (args.isNotEmpty()) possibleTargetServer.get() else currentServer.get())
+    restartConfigDependentFeatures()
     Log.info("Server deregistered.")
 }
 
@@ -141,4 +144,9 @@ private fun removePasswordConfig(args: Array<String>) {
     configPassword.set("")
     restartConfigDependentFeatures()
     Log.info("Removed password configuration.")
+}
+
+private fun reloadConfigurations(args: Array<String>) {
+    restartConfigDependentFeatures()
+    Log.info("Reloaded configurations.")
 }
