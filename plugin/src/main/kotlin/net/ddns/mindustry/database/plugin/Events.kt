@@ -47,12 +47,12 @@ private fun playerConnect(event: PlayerConnect) {
 }
 
 private fun playerLeave(event: PlayerLeave) {
-    val account = database!!.auth().find(event.player.ip(), event.player.uuid());
+    val account = database!!.auth().find(event.player.ip(), event.player.uuid())
 
     if (account.isEmpty) {
-        Log.warn("A player left but they could not be found in the database. They may not have a session.");
-        return;
+        Log.warn("A player left but they could not be found in the database. They may not have a session.")
+        return
     }
 
-    database!!.auth().leavesServer(account.get());
+    database!!.auth().leavesServer(account.get())
 }
