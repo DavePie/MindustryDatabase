@@ -15,11 +15,13 @@ class Main : Plugin() {
     }
 
     override fun init() {
-        // I'm going to kill myself is jOOQ sends another self-ad
+        // I'm going to kill myself if jOOQ sends another self-ad
         LogManager.getLogManager().reset()
         // https://stackoverflow.com/a/5762502
         Log.info("\u001B[34mPowered by jOOQ.\u001B[0m")
 
+        loadEvents()
+        loadChatFilters()
         restartConfigDependentFeatures()
         Log.info("Database plugin loaded.")
     }
