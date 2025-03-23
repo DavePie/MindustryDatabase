@@ -36,12 +36,16 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 }).findFirst();
     }
 
-    private void createSession(DSLContext tDsl, int accountId, byte[] session, int durationHours) throws DataAccessException {
+    /// Creates a new session if not present, else updates the previous one with the new information.
+    private void updateSession(DSLContext tDsl, int accountId, byte[] session, int durationHours) throws DataAccessException {
 
         final var expiration = OffsetDateTime.now().plusHours(durationHours);
-
         tDsl.insertInto(ACCOUNT_SESSION)
                 .set(ACCOUNT_SESSION.ACCOUNT_ID, accountId)
+                .set(ACCOUNT_SESSION.SESSION_COOKIE, session)
+                .set(ACCOUNT_SESSION.EXPIRATION_DATE, expiration)
+                .onConflict()
+                .doUpdate()
                 .set(ACCOUNT_SESSION.SESSION_COOKIE, session)
                 .set(ACCOUNT_SESSION.EXPIRATION_DATE, expiration)
                 .execute();
@@ -132,8 +136,8 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                         .where(ACCOUNT.ID.eq(account.id()))
                         .execute();
 
-                // I create a new session for the user.
-                createSession(tDsl, account.id(), session, durationHours);
+                // I create a new session, or update the previous one for the user.
+                updateSession(tDsl, account.id(), session, durationHours);
 
                 return new LoginStatus.LoggedIn(account);
             });
