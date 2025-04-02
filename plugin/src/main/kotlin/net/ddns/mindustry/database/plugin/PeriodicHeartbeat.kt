@@ -57,8 +57,6 @@ private fun serverHeartbeat(): () -> Unit {
             exitProcess(0)
         }
 
-        Log.debug("lorem ipsum")
-
         val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
 
         if (server.isEmpty) {

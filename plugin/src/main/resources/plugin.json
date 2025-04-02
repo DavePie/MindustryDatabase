@@ -2,6 +2,6 @@
   "name": "Mindustry Database",
   "author": "net.ddns.mindustry",
   "main": "net.ddns.mindustry.database.plugin.Main",
-  "description": "A plugin for moderating Mindustry.",
+  "description": "A plugin to store and modify player artifacts in a centralized database system.",
   "version": "1.0.0"
 }
