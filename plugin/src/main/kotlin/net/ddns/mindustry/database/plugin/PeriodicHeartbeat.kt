@@ -2,7 +2,6 @@ package net.ddns.mindustry.database.plugin
 
 import arc.util.Log
 import mindustry.net.Administration
-import mindustry.Vars.state
 import mindustry.Vars.net
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.schema.tables.pojos.Server

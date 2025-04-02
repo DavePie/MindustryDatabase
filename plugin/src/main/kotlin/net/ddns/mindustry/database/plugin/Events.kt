@@ -2,8 +2,6 @@ package net.ddns.mindustry.database.plugin
 
 import arc.Events
 import arc.util.Log
-import mindustry.Vars.net
-import mindustry.Vars.state
 import mindustry.core.GameState
 import mindustry.game.EventType.PlayerConnect
 import mindustry.game.EventType.PlayerLeave
