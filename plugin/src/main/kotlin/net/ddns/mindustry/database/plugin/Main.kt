@@ -24,6 +24,8 @@ class Main : Plugin() {
         loadChatFilters()
         restartConfigDependentFeatures()
         Log.info("Database plugin loaded.")
+        Log.warn("Do NOT run `exit` when hosting. Instead, stop the server with `stop` and then `exit`. This ensures " +
+                "that the scheduler is closed gracefully.")
     }
 
     override fun registerClientCommands(handler: CommandHandler?) {

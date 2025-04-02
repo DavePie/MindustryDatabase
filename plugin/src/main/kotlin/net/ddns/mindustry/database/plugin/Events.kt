@@ -2,8 +2,13 @@ package net.ddns.mindustry.database.plugin
 
 import arc.Events
 import arc.util.Log
+import mindustry.Vars.net
+import mindustry.Vars.state
+import mindustry.core.GameState
 import mindustry.game.EventType.PlayerConnect
 import mindustry.game.EventType.PlayerLeave
+import mindustry.game.EventType.PlayEvent
+import mindustry.game.EventType.StateChangeEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.net.Administration
@@ -13,6 +18,8 @@ import net.ddns.mindustry.database.plugin.Main.Companion.database
 fun loadEvents() {
     Events.on(PlayerConnect::class.java) {e -> playerConnect(e)}
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
+    Events.on(PlayEvent::class.java) {e -> startHeartbeatScheduler()}
+    Events.on(StateChangeEvent::class.java) { e -> gameOver(e)}
 }
 
 private fun playerConnect(event: PlayerConnect) {
@@ -55,4 +62,17 @@ private fun playerLeave(event: PlayerLeave) {
     }
 
     database!!.auth().leavesServer(account.get())
+}
+
+private fun gameOver(event: StateChangeEvent) {
+    Log.debug("State change detected")
+    Log.debug("New state: " + event.to.name)
+    Log.debug("Old state: " + event.from.name)
+
+    if (event.to == GameState.State.playing) {
+        return
+    }
+
+    Log.debug("Killing heartbeat scheduler due to non-playing state.")
+    stopHeartbeatScheduler()
 }

@@ -2,11 +2,14 @@ package net.ddns.mindustry.database.plugin
 
 import arc.util.Log
 import mindustry.net.Administration
+import mindustry.Vars.state
+import mindustry.Vars.net
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.schema.tables.pojos.Server
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.system.exitProcess
 
 private var server: Server? = null
 private var scheduler: ScheduledExecutorService? = null
@@ -23,23 +26,40 @@ fun startHeartbeatScheduler() {
     server = possibleServer.get()
     scheduler = Executors.newSingleThreadScheduledExecutor()
 
-    scheduler!!.scheduleAtFixedRate(serverHeartbeat(), 0, server!!.heartbeatPeriod().toLong(), TimeUnit.MILLISECONDS)
+    scheduler!!.scheduleAtFixedRate(serverHeartbeat(), 1000, server!!.heartbeatPeriod().toLong(), TimeUnit.MILLISECONDS)
 }
 
 fun stopHeartbeatScheduler() {
-    scheduler!!.shutdown()
+    if ((server == null) || (scheduler == null)) return
 
+    scheduler!!.shutdown()
     scheduler = null
     server = null
 }
 
 fun restartHeartbeatScheduler() {
-    if ((server != null) && (scheduler != null)) stopHeartbeatScheduler()
+    if ((server == null) || (scheduler == null)) return
+
+    stopHeartbeatScheduler()
     startHeartbeatScheduler()
 }
 
 private fun serverHeartbeat(): () -> Unit {
     return {
+        Log.debug("Net active: " + net.active())
+
+        if (!net.active()) {
+            // pls kys, heartbeat scheduler
+            Log.debug("Stopping scheduler.")
+            Log.warn("Heartbeat scheduler is still beating, but net is inactive. Assuming improper exit, the heartbeat" +
+                    " scheduler will be shut down.")
+            stopHeartbeatScheduler()
+
+            exitProcess(0)
+        }
+
+        Log.debug("lorem ipsum")
+
         val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
 
         if (server.isEmpty) {
