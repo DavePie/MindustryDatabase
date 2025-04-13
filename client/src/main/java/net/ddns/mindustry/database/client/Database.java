@@ -2,7 +2,7 @@ package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.client.impl.DatabaseImpl;
 
-public interface Database {
+public interface Database extends AutoCloseable {
 
     static Database newConnection(String url, String user, String password, SecurityConfig config) {
         return new DatabaseImpl(url, user, password, config);
@@ -17,4 +17,7 @@ public interface Database {
     PunishmentQueries punishment();
 
     RoleQueries role();
+
+    @Override
+    void close();
 }

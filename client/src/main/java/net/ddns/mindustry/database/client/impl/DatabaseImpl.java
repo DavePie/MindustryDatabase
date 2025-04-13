@@ -1,13 +1,14 @@
 package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.*;
-import org.jooq.DSLContext;
+import org.jooq.CloseableDSLContext;
 import org.jooq.impl.DSL;
 import org.postgresql.Driver;
 import java.util.Objects;
 
 public final class DatabaseImpl implements Database {
 
+    private final CloseableDSLContext dsl;
     private final SecurityConfig config;
     private final AccountQueriesImpl auth;
     private final ServerQueriesImpl server;
@@ -21,7 +22,7 @@ public final class DatabaseImpl implements Database {
             throw new IllegalStateException("The database driver could not be loaded.", e);
         }
 
-        final DSLContext dsl = DSL.using(Objects.requireNonNull(url),
+        this.dsl = DSL.using(Objects.requireNonNull(url),
                 Objects.requireNonNull(username),
                 password);
 
@@ -55,5 +56,10 @@ public final class DatabaseImpl implements Database {
     @Override
     public RoleQueries role() {
         return role;
+    }
+
+    @Override
+    public void close() {
+        dsl.close();
     }
 }
