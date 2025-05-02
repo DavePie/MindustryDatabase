@@ -241,3 +241,23 @@ CREATE TABLE IF NOT EXISTS role_permission(
     CONSTRAINT fk_permission FOREIGN KEY(permission_id) REFERENCES permission(id) ON DELETE CASCADE,
     CONSTRAINT u_role_permission UNIQUE(role_id, permission_id)
 );
+
+-- Insert Notify sender
+CREATE OR REPLACE FUNCTION notify_on_insert() RETURNS trigger AS $$
+DECLARE
+    channel_name text := 'channel_insert_' || TG_TABLE_NAME;
+BEGIN
+    PERFORM pg_notify(channel_name, row_to_json(NEW)::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert triggers
+CREATE TRIGGER notify_insert_ban AFTER INSERT ON ban
+FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+
+CREATE TRIGGER notify_insert_kick AFTER INSERT ON kick
+FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+
+CREATE TRIGGER notify_insert_warn AFTER INSERT ON warn
+FOR EACH ROW EXECUTE FUNCTION notify_on_insert();

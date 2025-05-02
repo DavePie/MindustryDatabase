@@ -26,12 +26,13 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
     private final ArrayList<Consumer<Ban>>  banListeners  = new ArrayList<>();
     private final ArrayList<Consumer<Kick>> kickListeners = new ArrayList<>();
     private final ArrayList<Consumer<Warn>> warnListeners = new ArrayList<>();
+    private final DSLContext dsl;
     private final PgConnection pgCon;
     private final ScheduledFuture<?> notificationThread;
 
     public PunishmentListenersImpl(DSLContext dsl) throws SQLException {
-        final var con = Objects.requireNonNull(dsl)
-                .configuration()
+        this.dsl = Objects.requireNonNull(dsl);
+        final var con = dsl.configuration()
                 .connectionProvider()
                 .acquire();
         Objects.requireNonNull(con, "Could not retrieve the DSLContext connection.");
@@ -115,19 +116,22 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
     }
 
     private void notificationListener() {
+        if (Thread.interrupted()) return; // The close() method has been called.
         try {
-
+            // Unfortunately, I'm forced to do this; else the notifications will not get updated.
+            dsl.selectOne().execute();
             final PGNotification[] notifications = pgCon.getNotifications();
             if (notifications == null) return; // No notifications to listen to.
 
+            final String prefix = "channel_insert_";
             for (var notification : notifications) {
 
                 final String name = notification.getName();
                 final String data = notification.getParameter();
 
-                if      (name.equals("channel_" + Tables.BAN.getName ())) triggerBan(mapper.readValue(data, Ban.class));
-                else if (name.equals("channel_" + Tables.KICK.getName())) triggerKick(mapper.readValue(data, Kick.class));
-                else if (name.equals("channel_" + Tables.WARN.getName())) triggerWarn(mapper.readValue(data, Warn.class));
+                if      (name.equals(prefix + Tables.BAN.getName ())) triggerBan (mapper.readValue(data, Ban.class));
+                else if (name.equals(prefix + Tables.KICK.getName())) triggerKick(mapper.readValue(data, Kick.class));
+                else if (name.equals(prefix + Tables.WARN.getName())) triggerWarn(mapper.readValue(data, Warn.class));
             }
         } catch (JsonProcessingException | SQLException ignored) {
             // TODO Cannot handle it in any way unless with a log.
