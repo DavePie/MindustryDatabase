@@ -4,6 +4,7 @@ import net.ddns.mindustry.database.client.*;
 import org.jooq.CloseableDSLContext;
 import org.jooq.impl.DSL;
 import org.postgresql.Driver;
+import java.sql.SQLException;
 import java.util.Objects;
 
 public final class DatabaseImpl implements Database {
@@ -14,6 +15,7 @@ public final class DatabaseImpl implements Database {
     private final ServerQueriesImpl server;
     private final PunishmentQueriesImpl punishment;
     private final RoleQueriesImpl role;
+    private final PunishmentListenersImpl punishmentListeners;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
 
@@ -31,6 +33,10 @@ public final class DatabaseImpl implements Database {
         this.server = new ServerQueriesImpl(dsl);
         this.punishment = new PunishmentQueriesImpl(dsl, auth);
         this.role = new RoleQueriesImpl(dsl);
+        try { this.punishmentListeners = new PunishmentListenersImpl(dsl);
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not start the punishment lister task.", e);
+        }
     }
 
     @Override
@@ -54,12 +60,18 @@ public final class DatabaseImpl implements Database {
     }
 
     @Override
+    public PunishmentListeners punishmentListeners() {
+        return punishmentListeners;
+    }
+
+    @Override
     public RoleQueries role() {
         return role;
     }
 
     @Override
     public void close() {
+        punishmentListeners.close();
         dsl.close();
     }
 }

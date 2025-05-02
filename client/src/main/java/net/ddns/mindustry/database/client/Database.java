@@ -16,6 +16,8 @@ public interface Database extends AutoCloseable {
 
     PunishmentQueries punishment();
 
+    PunishmentListeners punishmentListeners();
+
     RoleQueries role();
 
     @Override

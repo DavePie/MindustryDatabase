@@ -24,6 +24,7 @@ dependencies {
     implementation libs.jooqPostgresqlExtension
     implementation libs.argon2
     implementation libs.jna // For some reason gradle cannot resolve this dependency for argon2, so I added it manually.
+    implementation libs.jackson
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

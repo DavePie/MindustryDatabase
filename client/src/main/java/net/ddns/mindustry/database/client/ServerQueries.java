@@ -1,11 +1,11 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-
 import java.util.List;
 import java.util.Optional;
 
 public interface ServerQueries {
+
     /**
      * Gets a server via its ID.
      * @param id The ID of the server.
