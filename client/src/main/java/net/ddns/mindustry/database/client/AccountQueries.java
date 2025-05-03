@@ -32,14 +32,11 @@ public interface AccountQueries {
     /// @param password the new account password.
     /// @param ip the player address for internal checks.
     /// @param uuid the player uuid for internal checks.
-    SignupStatus signup(String username, char[] password, String displayName, String ip, String uuid);
+    SignupStatus signup(String username, char[] password, String ip, String uuid);
 
     JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException;
 
     void leavesServer(Account account) throws DataAccessException;
-
-    /// Updates the display name of an account.
-    void updateDisplayName(Account account, String displayName) throws DataAccessException;
 
     /// Updates the password of an account.
     /// @param newPassword The new password.

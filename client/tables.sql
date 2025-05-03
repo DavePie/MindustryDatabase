@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS account(
 
     id            SERIAL       PRIMARY KEY,
     username      VARCHAR(15)  NOT NULL UNIQUE, -- Anything bigger than 15 is quite long.
-    display_name  VARCHAR(255) NOT NULL,
     -- Variable length hash, not fixed length since the hash can get very long by changing the settings, and I want to allow that for future proofing.
     password      BYTEA        NOT NULL, -- Argon2id
     creation_date TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -58,6 +57,8 @@ CREATE TABLE IF NOT EXISTS server_join(
 
     id         SERIAL      PRIMARY KEY,
     account_id INT         NOT NULL,
+--    TODO Integrate
+--    display_name  VARCHAR(255) NOT NULL,
     server_id  INT         NOT NULL,
     join_date  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     leave_date TIMESTAMPTZ NULL     DEFAULT NULL,

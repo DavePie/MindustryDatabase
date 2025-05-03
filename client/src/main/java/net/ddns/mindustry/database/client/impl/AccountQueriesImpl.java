@@ -155,10 +155,9 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public SignupStatus signup(String username, char[] password, String displayName, String ip, String uuid) {
+    public SignupStatus signup(String username, char[] password, String ip, String uuid) {
 
         if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidName();
-        Objects.requireNonNull(displayName);
         Objects.requireNonNull(password);
 
         // I do this here to make the signup operation slow in every case.
@@ -169,11 +168,10 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         try {
             final Account account = dsl.insertInto(ACCOUNT)
                     .set(ACCOUNT.USERNAME, username)
-                    .set(ACCOUNT.DISPLAY_NAME, displayName)
                     .set(ACCOUNT.PASSWORD, hashedPass)
                     .onConflict(ACCOUNT.USERNAME)
                     .doNothing()
-                    .returning(ACCOUNT)
+                    .returningResult(ACCOUNT)
                     .fetchOneInto(Account.class);
 
             return account == null ? new SignupStatus.UsernameInUse() : new SignupStatus.Created(account);
@@ -221,18 +219,6 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         dsl.update(SERVER_JOIN)
                 .set(SERVER_JOIN.LEAVE_DATE, OffsetDateTime.now())
                 .where(SERVER_JOIN.ACCOUNT_ID.eq(account.id()).and(SERVER_JOIN.LEAVE_DATE.isNull()))
-                .execute();
-    }
-
-    @Override
-    public void updateDisplayName(Account account, String displayName) {
-
-        Objects.requireNonNull(account);
-        Objects.requireNonNull(displayName);
-
-        dsl.update(ACCOUNT)
-                .set(ACCOUNT.DISPLAY_NAME, displayName)
-                .where(ACCOUNT.ID.eq(account.id()))
                 .execute();
     }
 
