@@ -55,14 +55,13 @@ CREATE TABLE IF NOT EXISTS account_session(
 
 CREATE TABLE IF NOT EXISTS server_join(
 
-    id         SERIAL      PRIMARY KEY,
-    account_id INT         NOT NULL,
---    TODO Integrate
---    display_name  VARCHAR(255) NOT NULL,
-    server_id  INT         NOT NULL,
-    join_date  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    leave_date TIMESTAMPTZ NULL     DEFAULT NULL,
-
+    id           SERIAL       PRIMARY KEY,
+    display_name VARCHAR(255) NOT NULL,
+    account_id   INT          NOT NULL,
+    server_id    INT          NOT NULL,
+    join_date    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--  TODO Make account_id and leave_date unique to have a conflict ensuring a player will never be able to join multiple servers?
+    leave_date   TIMESTAMPTZ  NULL DEFAULT NULL,
     CONSTRAINT fk_server_join_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_server_join_server FOREIGN KEY(server_id)  REFERENCES server(id)
 );

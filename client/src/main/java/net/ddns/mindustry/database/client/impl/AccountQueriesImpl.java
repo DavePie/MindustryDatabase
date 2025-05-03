@@ -181,9 +181,10 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException {
+    public JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException {
 
         Objects.requireNonNull(server);
+        Objects.requireNonNull(displayName);
         final byte[] session = createSessionHash(ip, uuid);
 
         return dsl.transactionResult(ctx -> {
@@ -203,6 +204,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                     .isPresent()) return new JoinStatus.AlreadyInServer();
 
             tDsl.insertInto(SERVER_JOIN)
+                    .set(SERVER_JOIN.DISPLAY_NAME, displayName)
                     .set(SERVER_JOIN.ACCOUNT_ID, accountId)
                     .set(SERVER_JOIN.SERVER_ID, server.id())
                     .execute();

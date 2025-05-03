@@ -34,7 +34,7 @@ public interface AccountQueries {
     /// @param uuid the player uuid for internal checks.
     SignupStatus signup(String username, char[] password, String ip, String uuid);
 
-    JoinStatus joinsServer(Server server, String ip, String uuid) throws DataAccessException;
+    JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException;
 
     void leavesServer(Account account) throws DataAccessException;
 
