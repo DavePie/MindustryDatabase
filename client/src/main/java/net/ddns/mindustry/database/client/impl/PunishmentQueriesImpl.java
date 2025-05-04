@@ -1,9 +1,7 @@
 package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.PunishmentQueries;
-import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import net.ddns.mindustry.database.schema.tables.pojos.Ban;
-import net.ddns.mindustry.database.schema.tables.pojos.Server;
+import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
@@ -38,7 +36,28 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
     }
 
     @Override
-    public Status ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration) {
+    public Optional<Ban> findBan(int id) {
+        return dsl.selectFrom(BAN)
+                .where(BAN.ID.eq(id))
+                .fetchOptionalInto(Ban.class);
+    }
+
+    @Override
+    public Optional<Kick> findKick(int id) {
+        return dsl.selectFrom(KICK)
+                .where(KICK.ID.eq(id))
+                .fetchOptionalInto(Kick.class);
+    }
+
+    @Override
+    public Optional<Warn> findWarn(int id) {
+        return dsl.selectFrom(WARN)
+                .where(WARN.ID.eq(id))
+                .fetchOptionalInto(Warn.class);
+    }
+
+    @Override
+    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration) {
 
         Objects.requireNonNull(punishedUsername);
         Objects.requireNonNull(staffUsername);
@@ -50,79 +69,83 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
             final DSLContext tDsl = ctx.dsl();
 
             final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return Status.USERNAME_NOT_FOUND;
+            if (punished == null) return new Status.PunishedNotFound<>();
 
             final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return Status.STAFF_NOT_FOUND;
+            if (staff == null) return new Status.StaffNotFound<>();
 
             // I generate an unique uuid.
             long randomUuid = RANDOM.nextLong();
             while (findBan(tDsl, randomUuid).isPresent()) randomUuid = RANDOM.nextLong();
 
-            tDsl.insertInto(BAN)
+            final Ban ban = tDsl.insertInto(BAN)
                     .set(BAN.ACCOUNT_ID,      punished.id())
                     .set(BAN.STAFF_ID,        staff.id())
                     .set(BAN.REASON,          reason)
                     .set(BAN.SERVER_ID,       server.id())
                     .set(BAN.UUID,            randomUuid)
                     .set(BAN.EXPIRATION_DATE, expiration)
-                    .execute();
-
-            return Status.OK;
+                    .returningResult(BAN)
+                    .fetchOneInto(Ban.class);
+            return new PunishmentQueries.Status.Ok<>(ban);
         });
     }
 
     @Override
-    public Status kick(String punishedUsername, String staffUsername, String reason, Server server) {
+    public Status<Kick> kick(String punishedUsername, String staffUsername, String reason, Server server) {
+
         Objects.requireNonNull(punishedUsername);
         Objects.requireNonNull(staffUsername);
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
+
         return dsl.transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
 
             final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return Status.USERNAME_NOT_FOUND;
+            if (punished == null) return new Status.PunishedNotFound<>();
 
             final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return Status.STAFF_NOT_FOUND;
+            if (staff == null) return new Status.StaffNotFound<>();
 
-            tDsl.insertInto(KICK)
+            final Kick kick = tDsl.insertInto(KICK)
                     .set(KICK.ACCOUNT_ID, punished.id())
                     .set(KICK.STAFF_ID,   staff.id())
                     .set(KICK.REASON,     reason)
                     .set(KICK.SERVER_ID,  server.id())
-                    .execute();
-
-            return Status.OK;
+                    .returningResult(KICK)
+                    .fetchOneInto(Kick.class);
+            return new Status.Ok<>(kick);
         });
     }
 
     @Override
-    public Status warn(String punishedUsername, String staffUsername, String reason, Server server) {
+    public Status<Warn> warn(String punishedUsername, String staffUsername, String reason, Server server) {
+
         Objects.requireNonNull(punishedUsername);
         Objects.requireNonNull(staffUsername);
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
+
         return dsl.transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
 
             final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return Status.USERNAME_NOT_FOUND;
+            if (punished == null) return new Status.PunishedNotFound<>();
 
             final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return Status.STAFF_NOT_FOUND;
+            if (staff == null) return new Status.StaffNotFound<>();
 
-            tDsl.insertInto(WARN)
+            final Warn warn = tDsl.insertInto(WARN)
                     .set(WARN.ACCOUNT_ID, punished.id())
                     .set(WARN.STAFF_ID,   staff.id())
                     .set(WARN.REASON,     reason)
                     .set(WARN.SERVER_ID,  server.id())
-                    .execute();
-
-            return Status.OK;
+                    .returningResult(WARN)
+                    .fetchOneInto(Warn.class);
+            return new Status.Ok<>(warn);
         });
     }
 

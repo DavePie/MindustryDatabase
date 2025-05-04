@@ -1,35 +1,35 @@
 package net.ddns.mindustry.database.client;
 
-import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import net.ddns.mindustry.database.schema.tables.pojos.Ban;
-import net.ddns.mindustry.database.schema.tables.pojos.Server;
+import net.ddns.mindustry.database.schema.tables.pojos.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface PunishmentQueries {
 
+    // TODO Ask username instead of account
     List<Ban> activeBans(Account account);
 
     Optional<Ban> findBan(long uuid);
 
-    Status ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration);
+    Optional<Ban> findBan(int id);
 
-    default void permBan(String username, String staff, Server server, String reason) {
-        ban(username, staff, reason, server, null);
-    }
+    Optional<Kick> findKick(int id);
 
-    Status kick(String punishedUsername, String staffUsername, String reason, Server server);
+    Optional<Warn> findWarn(int id);
 
-    Status warn(String punishedUsername, String staffUsername, String reason, Server server);
+    Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration);
 
-    // TODO Provide uuid instead of ban?
+    Status<Kick> kick(String punishedUsername, String staffUsername, String reason, Server server);
+
+    Status<Warn> warn(String punishedUsername, String staffUsername, String reason, Server server);
+
     UnbanStatus unban(Ban ban, String staffUsername);
 
-    enum Status {
-        USERNAME_NOT_FOUND,
-        STAFF_NOT_FOUND,
-        OK
+    sealed interface Status<T> {
+        record PunishedNotFound<T>() implements Status<T> {}
+        record StaffNotFound<T>() implements Status<T> {}
+        record Ok<T>(T punishment) implements Status<T> {}
     }
 
     enum UnbanStatus {
