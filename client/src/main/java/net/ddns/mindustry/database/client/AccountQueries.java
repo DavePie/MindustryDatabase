@@ -3,11 +3,16 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.exception.DataAccessException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Objects;
 import java.util.Optional;
 
+@NullMarked
 public interface AccountQueries {
 
-    boolean isUsernameValid(String username);
+    boolean isUsernameValid(@Nullable String username);
 
     /// Searches the account with this username.
     /// @return the account if found.
@@ -47,7 +52,11 @@ public interface AccountQueries {
     sealed interface LoginStatus {
 
         /// The credentials are correct and the account has logged in.
-        record LoggedIn(Account account) implements LoginStatus {}
+        record LoggedIn(Account account) implements LoginStatus {
+            public LoggedIn {
+                Objects.requireNonNull(account);
+            }
+        }
 
         /// The username or password provided are wrong.
         record WrongCredentials() implements LoginStatus {}
@@ -58,7 +67,11 @@ public interface AccountQueries {
 
     sealed interface SignupStatus {
 
-        record Created(Account account) implements SignupStatus {}
+        record Created(Account account) implements SignupStatus {
+            public Created {
+                Objects.requireNonNull(account);
+            }
+        }
 
         record InvalidName() implements SignupStatus {}
 
@@ -72,7 +85,11 @@ public interface AccountQueries {
     sealed interface JoinStatus {
 
         /// The account is authenticated and joined in the server.
-        record Joined(Account account) implements JoinStatus {}
+        record Joined(Account account) implements JoinStatus {
+            public Joined {
+                Objects.requireNonNull(account);
+            }
+        }
 
         /// The account is already connected in this or another server.
         record AlreadyInServer() implements JoinStatus {}

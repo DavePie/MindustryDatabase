@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.PunishmentListeners;
 import net.ddns.mindustry.database.schema.Tables;
 import org.jooq.DSLContext;
+import org.jspecify.annotations.NullMarked;
 import org.postgresql.PGNotification;
 import org.postgresql.jdbc.PgConnection;
 import java.sql.SQLException;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.IntConsumer;
 
+@NullMarked
 public final class PunishmentListenersImpl implements PunishmentListeners, AutoCloseable {
 
     private static final String PREFIX = "channel_insert_";

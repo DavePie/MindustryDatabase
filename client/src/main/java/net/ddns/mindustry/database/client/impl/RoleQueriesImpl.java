@@ -6,9 +6,11 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jooq.DSLContext;
+import org.jspecify.annotations.NullMarked;
 import java.util.Objects;
 import java.util.Optional;
 
+@NullMarked
 public record RoleQueriesImpl(DSLContext dsl) implements RoleQueries {
 
     public RoleQueriesImpl {

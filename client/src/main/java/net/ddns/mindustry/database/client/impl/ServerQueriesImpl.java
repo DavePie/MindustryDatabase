@@ -4,6 +4,8 @@ import net.ddns.mindustry.database.client.ServerQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import org.jooq.postgres.extensions.types.Inet;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.OffsetDateTime;
@@ -12,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
+@NullMarked
 public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
 
     private static Inet inet(String ip) throws IllegalArgumentException {
@@ -60,7 +63,7 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
     }
 
     @Override
-    public void update(Server server, String newIP, Integer newPort, String newName) {
+    public void update(Server server, @Nullable String newIP, @Nullable Integer newPort, @Nullable String newName) {
         Objects.requireNonNull(server);
         dsl.update(SERVER)
                 .set(SERVER.IP_ADDRESS, newIP == null ? server.ipAddress() : inet(newIP))

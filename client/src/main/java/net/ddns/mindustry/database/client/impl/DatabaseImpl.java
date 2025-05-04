@@ -3,10 +3,12 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.*;
 import org.jooq.CloseableDSLContext;
 import org.jooq.impl.DSL;
+import org.jspecify.annotations.NullMarked;
 import org.postgresql.Driver;
 import java.sql.SQLException;
 import java.util.Objects;
 
+@NullMarked
 public final class DatabaseImpl implements Database {
 
     private final CloseableDSLContext dsl;

@@ -3,6 +3,8 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -10,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
+@NullMarked
 public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) implements PunishmentQueries {
 
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -57,7 +60,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
     }
 
     @Override
-    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, OffsetDateTime expiration) {
+    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, @Nullable OffsetDateTime expiration) {
 
         Objects.requireNonNull(punishedUsername);
         Objects.requireNonNull(staffUsername);
@@ -86,7 +89,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
                     .set(BAN.UUID,            randomUuid)
                     .set(BAN.EXPIRATION_DATE, expiration)
                     .returningResult(BAN)
-                    .fetchOneInto(Ban.class);
+                    .fetchOptionalInto(Ban.class)
+                    .orElseThrow();
             return new PunishmentQueries.Status.Ok<>(ban);
         });
     }
@@ -115,7 +119,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
                     .set(KICK.REASON,     reason)
                     .set(KICK.SERVER_ID,  server.id())
                     .returningResult(KICK)
-                    .fetchOneInto(Kick.class);
+                    .fetchOptionalInto(Kick.class)
+                    .orElseThrow();
             return new Status.Ok<>(kick);
         });
     }
@@ -144,7 +149,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
                     .set(WARN.REASON,     reason)
                     .set(WARN.SERVER_ID,  server.id())
                     .returningResult(WARN)
-                    .fetchOneInto(Warn.class);
+                    .fetchOptionalInto(Warn.class)
+                    .orElseThrow();
             return new Status.Ok<>(warn);
         });
     }

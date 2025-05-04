@@ -3,8 +3,10 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
+import org.jspecify.annotations.NullMarked;
 import java.util.Optional;
 
+@NullMarked
 public interface RoleQueries {
 
     /// Checks if this account has the role.

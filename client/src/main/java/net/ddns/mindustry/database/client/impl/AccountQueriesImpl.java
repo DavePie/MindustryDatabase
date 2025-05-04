@@ -6,6 +6,8 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.Objects;
@@ -14,6 +16,7 @@ import java.util.OptionalInt;
 import java.util.stream.IntStream;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
+@NullMarked
 public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implements AccountQueries {
 
     private byte[] createSessionHash(String ip, String uuid) {
@@ -58,14 +61,14 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .fetchOptionalInto(Account.class);
     }
 
-    public Account find(DSLContext tDsl, int id) {
+    public Optional<Account> find(DSLContext tDsl, int id) {
         return tDsl.selectFrom(ACCOUNT)
                 .where(ACCOUNT.ID.eq(id))
-                .fetchOneInto(Account.class);
+                .fetchOptionalInto(Account.class);
     }
 
     @Override
-    public boolean isUsernameValid(String username) {
+    public boolean isUsernameValid(@Nullable String username) {
 
         if (username == null) return false;
 
@@ -93,7 +96,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
         return sessionAccountId(dsl, createSessionHash(ip, uuid))
                 .stream()
-                .mapToObj(accountId -> find(dsl, accountId))
+                .mapToObj(accountId -> find(dsl, accountId).orElse(null))
                 .filter(Objects::nonNull)
                 .findFirst();
     }
@@ -211,7 +214,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
             // TODO Server authorization.
 
-            return new JoinStatus.Joined(find(tDsl, accountId));
+            return new JoinStatus.Joined(find(tDsl, accountId).orElseThrow());
         });
     }
 

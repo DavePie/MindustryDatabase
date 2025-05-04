@@ -2,11 +2,13 @@ package net.ddns.mindustry.database.client;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
+import org.jspecify.annotations.NullMarked;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 /// Class containing the hash configuration for sessions and passwords.
+@NullMarked
 public final class SecurityConfig {
 
     private final MessageDigest sessionDigest;
@@ -37,12 +39,6 @@ public final class SecurityConfig {
                     int argon2Parallelism) throws NoSuchAlgorithmException {
         // The default is Sha-256, a good default in terms of speed and security.
         this("SHA-256", saltLength, hashLength, argon2Iteration, argon2Memory, argon2Parallelism);
-    }
-
-    @Deprecated
-    /// TEST ONLY!
-    public SecurityConfig() throws NoSuchAlgorithmException {
-        this("SHA-256", 32, 255, 10, 69_000, 8);
     }
 
     public MessageDigest sessionHash() {
