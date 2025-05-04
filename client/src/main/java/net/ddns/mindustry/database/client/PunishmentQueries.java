@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public interface PunishmentQueries {
@@ -27,9 +28,16 @@ public interface PunishmentQueries {
     UnbanStatus unban(Ban ban, String staffUsername);
 
     sealed interface Status<T> {
+
         record PunishedNotFound<T>() implements Status<T> {}
+
         record StaffNotFound<T>() implements Status<T> {}
-        record Ok<T>(T punishment) implements Status<T> {}
+
+        record Ok<T>(T punishment) implements Status<T> {
+            public Ok {
+                Objects.requireNonNull(punishment);
+            }
+        }
     }
 
     enum UnbanStatus {

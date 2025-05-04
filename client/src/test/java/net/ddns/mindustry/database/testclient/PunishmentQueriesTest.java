@@ -4,6 +4,7 @@ import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.client.PunishmentListeners;
 import net.ddns.mindustry.database.client.PunishmentQueries;
+import net.ddns.mindustry.database.schema.tables.pojos.Ban;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.data.MockServer;
 import org.junit.jupiter.api.*;
@@ -53,8 +54,8 @@ public final class PunishmentQueriesTest {
         final var oServer = db.server().find(server.ip(), server.port());
         if (oServer.isEmpty()) Assertions.fail("The server did not get added.");
 
-        final PunishmentQueries.Status status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
-        if (status != PunishmentQueries.Status.OK) Assertions.fail("Could not add the ban: " + status);
+        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
+        Assertions.assertInstanceOf(PunishmentQueries.Status.Ok.class, status, "Could not add the ban: " + status);
     }
 
     @Test
@@ -68,12 +69,15 @@ public final class PunishmentQueriesTest {
         db.punishmentListeners().register(PunishmentListeners.Type.BAN, future::complete);
 
         final String reason = "random_stuff";
-        final PunishmentQueries.Status status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
-        if (status != PunishmentQueries.Status.OK) Assertions.fail("Could not add the ban: " + status);
+        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
+        if (!(status instanceof PunishmentQueries.Status.Ok<Ban>(Ban ban))) {
+            Assertions.fail("Could not add the ban: " + status);
+            throw new IllegalStateException();
+        }
 
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            future.get();
+            final int id = future.get();
+            Assertions.assertEquals(ban.id(), id);
         });
     }
 }
-
