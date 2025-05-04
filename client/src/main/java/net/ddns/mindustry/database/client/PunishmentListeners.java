@@ -1,21 +1,16 @@
 package net.ddns.mindustry.database.client;
 
-import net.ddns.mindustry.database.schema.tables.pojos.Ban;
-import net.ddns.mindustry.database.schema.tables.pojos.Kick;
-import net.ddns.mindustry.database.schema.tables.pojos.Warn;
-import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public interface PunishmentListeners {
 
-    void registerBanListener(Consumer<Ban> listener);
+    void register(Type type, IntConsumer listener);
 
-    void unregisterBanListener(Consumer<Ban> listener);
+    void unregister(Type type, IntConsumer listener);
 
-    void registerKickListener(Consumer<Kick> listener);
-
-    void unregisterKickListener(Consumer<Kick> listener);
-
-    void registerWarnListener(Consumer<Warn> listener);
-
-    void unregisterWarnListener(Consumer<Warn> listener);
+    enum Type {
+        BAN,
+        KICK,
+        WARN
+    }
 }

@@ -247,7 +247,7 @@ CREATE OR REPLACE FUNCTION notify_on_insert() RETURNS trigger AS $$
 DECLARE
     channel_name text := 'channel_insert_' || TG_TABLE_NAME;
 BEGIN
-    PERFORM pg_notify(channel_name, row_to_json(NEW)::text);
+    PERFORM pg_notify(channel_name, NEW.id::text);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
