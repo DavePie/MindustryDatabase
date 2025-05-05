@@ -34,6 +34,7 @@ test {
     useJUnitPlatform()
     systemProperty "org.jooq.no-logo", true
     systemProperty "org.jooq.no-tips", true
+    maxParallelForks = 8
 }
 
 java {
