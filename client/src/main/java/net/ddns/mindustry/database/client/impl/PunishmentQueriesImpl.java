@@ -6,6 +6,7 @@ import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -93,6 +94,12 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
                     .orElseThrow();
             return new PunishmentQueries.Status.Ok<>(ban);
         });
+    }
+
+    @Override
+    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, Duration duration) {
+        Objects.requireNonNull(duration);
+        return ban(punishedUsername, staffUsername, reason, server, OffsetDateTime.now().plus(duration));
     }
 
     @Override

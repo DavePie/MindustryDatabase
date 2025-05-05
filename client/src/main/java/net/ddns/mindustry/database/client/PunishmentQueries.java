@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +24,8 @@ public interface PunishmentQueries {
     Optional<Warn> findWarn(int id);
 
     Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, @Nullable OffsetDateTime expiration);
+
+    Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, Duration duration);
 
     Status<Kick> kick(String punishedUsername, String staffUsername, String reason, Server server);
 
