@@ -50,31 +50,14 @@ public final class PunishmentQueriesTest {
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
     void ban(String reason) {
 
-        final var server  = MockServer.instance();
-        final var oServer = db.server().find(server.ip(), server.port());
-        if (oServer.isEmpty()) Assertions.fail("The server did not get added.");
-
-        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
-        Assertions.assertInstanceOf(PunishmentQueries.Status.Ok.class, status, "Could not add the ban: " + status);
-    }
-
-    @Test
-    void banListener() {
-
-        final var server  = MockServer.instance();
-        final var oServer = db.server().find(server.ip(), server.port());
-        if (oServer.isEmpty()) Assertions.fail("The server did not get added.");
-
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         db.punishmentListeners().register(PunishmentListeners.Type.BAN, future::complete);
 
-        final String reason = "random_stuff";
-        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, oServer.orElseThrow(), null);
+        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, MockServer.fromDb(db), null);
         if (!(status instanceof PunishmentQueries.Status.Ok<Ban>(Ban ban))) {
             Assertions.fail("Could not add the ban: " + status);
             throw new IllegalStateException();
         }
-
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             final int id = future.get();
             Assertions.assertEquals(ban.id(), id);
