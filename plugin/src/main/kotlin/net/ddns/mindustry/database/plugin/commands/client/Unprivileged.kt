@@ -147,7 +147,7 @@ private fun callbackSignupPassword(player: Player, text: String?, args: Array<St
             Call.infoMessage(player.con(), "[scarlet]The username that was provided is already in use.")
         }
 
-        is InvalidName, is InvalidPassword -> {
+        is InvalidUsername, is InvalidPassword -> {
             Call.infoMessage(player.con(), "[scarlet]The username or password that was provided is invalid.")
         }
 

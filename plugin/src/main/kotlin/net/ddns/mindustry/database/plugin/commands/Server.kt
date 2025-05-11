@@ -55,7 +55,7 @@ private fun deregisterServer(args: Array<String>) {
         targetID = args[0].toInt()
     }
 
-    val possibleTargetServer = database!!.server()[targetID]
+    val possibleTargetServer = database!!.server().find(targetID)
 
     if (possibleTargetServer.isEmpty && args.isNotEmpty()) {
         Log.err("The server ID provided is invalid.")

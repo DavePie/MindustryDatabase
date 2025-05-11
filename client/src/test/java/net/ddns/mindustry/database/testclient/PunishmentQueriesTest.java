@@ -4,9 +4,8 @@ import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.client.PunishmentListeners;
 import net.ddns.mindustry.database.client.PunishmentQueries;
-import net.ddns.mindustry.database.schema.tables.pojos.Ban;
-import net.ddns.mindustry.database.schema.tables.pojos.Kick;
-import net.ddns.mindustry.database.schema.tables.pojos.Warn;
+import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.schema.tables.pojos.*;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.data.MockServer;
 import org.junit.jupiter.api.*;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.IntConsumer;
@@ -61,11 +59,13 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = future::complete;
         db.punishmentListeners().register(PunishmentListeners.Type.BAN, listener);
 
-        final var status = db.punishment().ban(USER_PUNISHED, USER_STAFF, reason, MockServer.fromDb(db), (OffsetDateTime) null);
-        if (!(status instanceof PunishmentQueries.Status.Ok<Ban>(Ban ban))) {
-            Assertions.fail("Could not issue the ban: " + status);
-            throw new IllegalStateException();
-        }
+        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.auth()
+                .find(USER_STAFF)
+                .map(PunishmentQueries.Issuer::of)
+                .orElseThrow();
+
+        final Ban ban = db.punishment().ban(punished, punisher, reason, MockServer.fromDb(db), Duration.ofDays(15));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             final int id = future.get();
             Assertions.assertEquals(ban.id(), id);
@@ -81,11 +81,13 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = future::complete;
         db.punishmentListeners().register(PunishmentListeners.Type.KICK, listener);
 
-        final var status = db.punishment().kick(USER_PUNISHED, USER_STAFF, reason, MockServer.fromDb(db));
-        if (!(status instanceof PunishmentQueries.Status.Ok<Kick>(Kick kick))) {
-            Assertions.fail("Could not issue the kick: " + status);
-            throw new IllegalStateException();
-        }
+        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.auth()
+                .find(USER_STAFF)
+                .map(PunishmentQueries.Issuer::of)
+                .orElseThrow();
+
+        final Kick kick = db.punishment().kick(punished, punisher, reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             final int id = future.get();
             Assertions.assertEquals(kick.id(), id);
@@ -101,11 +103,13 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = future::complete;
         db.punishmentListeners().register(PunishmentListeners.Type.WARN, listener);
 
-        final var status = db.punishment().warn(USER_PUNISHED, USER_STAFF, reason, MockServer.fromDb(db));
-        if (!(status instanceof PunishmentQueries.Status.Ok<Warn>(Warn warn))) {
-            Assertions.fail("Could not issue the warn: " + status);
-            throw new IllegalStateException();
-        }
+        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.auth()
+                .find(USER_STAFF)
+                .map(PunishmentQueries.Issuer::of)
+                .orElseThrow();
+
+        final Warn warn = db.punishment().warn(punished, punisher, reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             final int id = future.get();
             Assertions.assertEquals(warn.id(), id);

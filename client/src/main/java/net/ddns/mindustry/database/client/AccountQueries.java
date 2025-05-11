@@ -5,7 +5,6 @@ import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.exception.DataAccessException;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-
 import java.util.Objects;
 import java.util.Optional;
 
@@ -73,7 +72,7 @@ public interface AccountQueries {
             }
         }
 
-        record InvalidName() implements SignupStatus {}
+        record InvalidUsername() implements SignupStatus {}
 
         ///  When the password does not fit security criteria.
         record InvalidPassword() implements SignupStatus {}

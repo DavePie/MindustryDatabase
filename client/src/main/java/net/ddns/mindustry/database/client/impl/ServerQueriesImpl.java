@@ -25,11 +25,16 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
         }
     }
 
-    @Override
-    public Optional<Server> get(int id) {
-        return dsl.selectFrom(SERVER)
+    Optional<Server> find(DSLContext tDsl, int id) {
+        Objects.requireNonNull(tDsl);
+        return tDsl.selectFrom(SERVER)
                 .where(SERVER.ID.eq(id))
                 .fetchOptionalInto(Server.class);
+    }
+
+    @Override
+    public Optional<Server> find(int id) {
+        return find(dsl, id);
     }
 
     @Override

@@ -2,7 +2,6 @@ package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -12,7 +11,8 @@ import java.util.Optional;
 @NullMarked
 public interface PunishmentQueries {
 
-    // TODO Ask username instead of account? Or have one for username and one for id?
+    Optional<Issuer> findIssuer(int id);
+
     List<Ban> activeBans(Account account);
 
     Optional<Ban> findBan(long uuid);
@@ -23,32 +23,47 @@ public interface PunishmentQueries {
 
     Optional<Warn> findWarn(int id);
 
-    Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, @Nullable OffsetDateTime expiration);
+    Ban infiteBan(Account punished, Issuer issuer, String reason, Server server);
 
-    Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, Duration duration);
+    Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime expiration);
 
-    Status<Kick> kick(String punishedUsername, String staffUsername, String reason, Server server);
+    Ban ban(Account punished, Issuer issuer, String reason, Server server, Duration duration);
 
-    Status<Warn> warn(String punishedUsername, String staffUsername, String reason, Server server);
+    Kick kick(Account punished, Issuer issuer, String reason, Server server);
 
-    UnbanStatus unban(Ban ban, String staffUsername);
+    Warn warn(Account punished, Issuer issuer, String reason, Server server);
 
-    sealed interface Status<T> {
+    UnbanStatus unban(Ban ban, Issuer issuer);
 
-        record PunishedNotFound<T>() implements Status<T> {}
-
-        record StaffNotFound<T>() implements Status<T> {}
-
-        record Ok<T>(T punishment) implements Status<T> {
-            public Ok {
-                Objects.requireNonNull(punishment);
-            }
+    /// @param unban the row of the issued unban.
+    /// @param alreadyUnbanned true if the ban has already been unbanned, false if the ban has just been unbanned.
+    record UnbanStatus(Unban unban, boolean alreadyUnbanned) {
+        public UnbanStatus {
+            Objects.requireNonNull(unban);
         }
     }
 
-    enum UnbanStatus {
-        STAFF_NOT_FOUND,
-        ALREADY_UNBANNED,
-        OK
+    @NullMarked
+    sealed interface Issuer {
+
+        static Issuer of(Server server) {
+            return new Console(server);
+        }
+
+        static Issuer of(Account account) {
+            return new Player(account);
+        }
+
+        record Console(Server server) implements Issuer {
+            public Console {
+                Objects.requireNonNull(server);
+            }
+        }
+
+        record Player(Account account) implements Issuer {
+            public Player {
+                Objects.requireNonNull(account);
+            }
+        }
     }
 }

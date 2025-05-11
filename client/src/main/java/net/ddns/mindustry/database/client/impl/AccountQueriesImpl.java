@@ -160,12 +160,14 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     @Override
     public SignupStatus signup(String username, char[] password, String ip, String uuid) {
 
-        if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidName();
+        if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidUsername();
         Objects.requireNonNull(password);
 
         // I do this here to make the signup operation slow in every case.
         final byte[] hashedPass = security.hashPass(password).getBytes(StandardCharsets.UTF_8);
 
+        // The password is too short.
+        if (password.length <= 4) return new SignupStatus.InvalidPassword();
         // TODO Account checking.
 
         try {

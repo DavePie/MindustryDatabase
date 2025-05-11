@@ -1,6 +1,7 @@
 package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.PunishmentQueries;
+import net.ddns.mindustry.database.schema.enums.PunishmentIssuerType;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
@@ -14,7 +15,7 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
-public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) implements PunishmentQueries {
+public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountImpl, ServerQueriesImpl serverImpl) implements PunishmentQueries {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -22,6 +23,81 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
         return tDsl.selectFrom(BAN)
                 .where(BAN.UUID.eq(uuid))
                 .fetchOptionalInto(Ban.class);
+    }
+
+    /// Requires a transaction.
+    private PunishmentIssuer retrieveIssuer(DSLContext tDsl, Issuer issuer) {
+
+        Objects.requireNonNull(tDsl);
+        Objects.requireNonNull(issuer);
+
+        // I try to insert the issuer, in case it is already inserted, I do nothing and select it.
+        final var insert = tDsl.insertInto(PUNISHMENT_ISSUER);
+        final var oIssuer = (switch (issuer) {
+
+            case Issuer.Console(var server) -> insert.set(PUNISHMENT_ISSUER.TYPE, PunishmentIssuerType.server)
+                    .set(PUNISHMENT_ISSUER.SERVER_ID, server.id());
+
+            case Issuer.Player (var user  ) -> insert.set(PUNISHMENT_ISSUER.TYPE, PunishmentIssuerType.account)
+                    .set(PUNISHMENT_ISSUER.ACCOUNT_ID, user.id());
+
+        }).onConflictDoNothing()
+                .returningResult(PUNISHMENT_ISSUER)
+                .fetchOptionalInto(PunishmentIssuer.class);
+        // The issuer has been inserted, so I return the inserted value.
+        if (oIssuer.isPresent()) return oIssuer.orElseThrow();
+
+        // The issuer already exists, so I select it.
+        final var select = tDsl.selectFrom(PUNISHMENT_ISSUER);
+        return (switch (issuer) {
+            case Issuer.Console(var server) -> select.where(PUNISHMENT_ISSUER.SERVER_ID.eq(server.id()));
+            case Issuer.Player (var user  ) -> select.where(PUNISHMENT_ISSUER.ACCOUNT_ID.eq(user.id()));
+        }).fetchOptionalInto(PunishmentIssuer.class).orElseThrow(); // Always present.
+    }
+
+    private Ban banQuery(Account punished, Issuer issuer, String reason, Server server, @Nullable OffsetDateTime expiration) {
+
+        Objects.requireNonNull(punished);
+        Objects.requireNonNull(issuer);
+        Objects.requireNonNull(reason);
+        Objects.requireNonNull(server);
+        // Expiration can be nullable.
+
+        return dsl.transactionResult(ctx -> {
+
+            final DSLContext tDsl = ctx.dsl();
+            final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
+
+            // I generate an unique uuid.
+            long randomUuid = RANDOM.nextLong();
+            while (findBan(tDsl, randomUuid).isPresent()) randomUuid = RANDOM.nextLong();
+
+            return tDsl.insertInto(BAN)
+                    .set(BAN.ACCOUNT_ID,      punished.id())
+                    .set(BAN.ISSUER_ID,       issuerId)
+                    .set(BAN.REASON,          reason)
+                    .set(BAN.SERVER_ID,       server.id())
+                    .set(BAN.UUID,            randomUuid)
+                    .set(BAN.EXPIRATION_DATE, expiration)
+                    .returningResult(BAN)
+                    .fetchOptionalInto(Ban.class)
+                    .orElseThrow();
+        });
+    }
+
+    @Override
+    public Optional<Issuer> findIssuer(int id) {
+
+        return dsl.transactionResult(ctx -> {
+            final DSLContext tDsl = ctx.dsl();
+            return tDsl.selectFrom(PUNISHMENT_ISSUER)
+                    .where(PUNISHMENT_ISSUER.ID.eq(id))
+                    .fetchOptionalInto(PunishmentIssuer.class)
+                    .map(result -> switch (result.type()) {
+                        case account -> Issuer.of(accountImpl().find(tDsl, result.accountId()).orElseThrow());
+                        case server -> Issuer.of(serverImpl().find(tDsl, result.serverId()).orElseThrow());
+                    });
+        });
     }
 
     @Override
@@ -61,131 +137,97 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl account) 
     }
 
     @Override
-    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, @Nullable OffsetDateTime expiration) {
-
-        Objects.requireNonNull(punishedUsername);
-        Objects.requireNonNull(staffUsername);
-        Objects.requireNonNull(reason);
-        Objects.requireNonNull(server);
-        // Expiration can be nullable.
-
-        return dsl.transactionResult(ctx -> {
-            final DSLContext tDsl = ctx.dsl();
-
-            final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return new Status.PunishedNotFound<>();
-
-            final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return new Status.StaffNotFound<>();
-
-            // I generate an unique uuid.
-            long randomUuid = RANDOM.nextLong();
-            while (findBan(tDsl, randomUuid).isPresent()) randomUuid = RANDOM.nextLong();
-
-            final Ban ban = tDsl.insertInto(BAN)
-                    .set(BAN.ACCOUNT_ID,      punished.id())
-                    .set(BAN.STAFF_ID,        staff.id())
-                    .set(BAN.REASON,          reason)
-                    .set(BAN.SERVER_ID,       server.id())
-                    .set(BAN.UUID,            randomUuid)
-                    .set(BAN.EXPIRATION_DATE, expiration)
-                    .returningResult(BAN)
-                    .fetchOptionalInto(Ban.class)
-                    .orElseThrow();
-            return new PunishmentQueries.Status.Ok<>(ban);
-        });
+    public Ban infiteBan(Account punished, Issuer issuer, String reason, Server server) {
+        return banQuery(punished, issuer, reason, server, null);
     }
 
     @Override
-    public Status<Ban> ban(String punishedUsername, String staffUsername, String reason, Server server, Duration duration) {
+    public Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime expiration) {
+        Objects.requireNonNull(expiration);
+        return banQuery(punished, issuer, reason, server, expiration);
+    }
+
+    @Override
+    public Ban ban(Account punished, Issuer issuer, String reason, Server server, Duration duration) {
         Objects.requireNonNull(duration);
-        return ban(punishedUsername, staffUsername, reason, server, OffsetDateTime.now().plus(duration));
+        return ban(punished, issuer, reason, server, OffsetDateTime.now().plus(duration));
     }
 
     @Override
-    public Status<Kick> kick(String punishedUsername, String staffUsername, String reason, Server server) {
+    public Kick kick(Account punished, Issuer issuer, String reason, Server server) {
 
-        Objects.requireNonNull(punishedUsername);
-        Objects.requireNonNull(staffUsername);
+        Objects.requireNonNull(punished);
+        Objects.requireNonNull(issuer);
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
 
         return dsl.transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
+            final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
-            final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return new Status.PunishedNotFound<>();
-
-            final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return new Status.StaffNotFound<>();
-
-            final Kick kick = tDsl.insertInto(KICK)
+            return tDsl.insertInto(KICK)
                     .set(KICK.ACCOUNT_ID, punished.id())
-                    .set(KICK.STAFF_ID,   staff.id())
+                    .set(KICK.ISSUER_ID,  issuerId)
                     .set(KICK.REASON,     reason)
                     .set(KICK.SERVER_ID,  server.id())
                     .returningResult(KICK)
                     .fetchOptionalInto(Kick.class)
                     .orElseThrow();
-            return new Status.Ok<>(kick);
         });
     }
 
     @Override
-    public Status<Warn> warn(String punishedUsername, String staffUsername, String reason, Server server) {
+    public Warn warn(Account punished, Issuer issuer, String reason, Server server) {
 
-        Objects.requireNonNull(punishedUsername);
-        Objects.requireNonNull(staffUsername);
+        Objects.requireNonNull(punished);
+        Objects.requireNonNull(issuer);
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
 
         return dsl.transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
+            final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
-            final Account punished = account.find(tDsl, punishedUsername).orElse(null);
-            if (punished == null) return new Status.PunishedNotFound<>();
-
-            final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return new Status.StaffNotFound<>();
-
-            final Warn warn = tDsl.insertInto(WARN)
+            return tDsl.insertInto(WARN)
                     .set(WARN.ACCOUNT_ID, punished.id())
-                    .set(WARN.STAFF_ID,   staff.id())
+                    .set(WARN.ISSUER_ID,  issuerId)
                     .set(WARN.REASON,     reason)
                     .set(WARN.SERVER_ID,  server.id())
                     .returningResult(WARN)
                     .fetchOptionalInto(Warn.class)
                     .orElseThrow();
-            return new Status.Ok<>(warn);
         });
     }
 
     @Override
-    public UnbanStatus unban(Ban ban, String staffUsername) {
+    public UnbanStatus unban(Ban ban, Issuer issuer) {
+
         Objects.requireNonNull(ban);
-        Objects.requireNonNull(staffUsername);
+        Objects.requireNonNull(issuer);
+
         return dsl.transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
+            final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
-            final boolean isUnbanned = tDsl.selectOne()
-                    .where(UNBAN.BAN_ID.eq(ban.id()))
-                    .fetchOptional()
-                    .isPresent();
-
-            if (isUnbanned) return UnbanStatus.ALREADY_UNBANNED;
-
-            final Account staff = account.find(tDsl, staffUsername).orElse(null);
-            if (staff == null) return UnbanStatus.STAFF_NOT_FOUND;
-
-            dsl.insertInto(UNBAN)
+            // I insert first, so I'm sure a row is always present,
+            // and I avoid the collision in case I do it after the select.
+            final var oUnban = dsl.insertInto(UNBAN)
                     .set(UNBAN.BAN_ID, ban.id())
-                    .set(UNBAN.STAFF_ID, staff.id())
-                    .execute();
+                    .set(UNBAN.ISSUER_ID, issuerId)
+                    .onConflictDoNothing()
+                    .returningResult(UNBAN)
+                    .fetchOptionalInto(Unban.class)
+                    .map(result -> new UnbanStatus(result, false));
+            if (oUnban.isPresent()) return oUnban.orElseThrow();
 
-            return UnbanStatus.OK;
+            return tDsl.selectOne()
+                    .where(UNBAN.BAN_ID.eq(ban.id()))
+                    .fetchOptionalInto(Unban.class)
+                    .map(result -> new UnbanStatus(result, true))
+                    .orElseThrow();
         });
     }
 }

@@ -14,7 +14,7 @@ public interface ServerQueries {
      * @param id The ID of the server.
      * @return An optional that may contain the server object.
      */
-    Optional<Server> get(int id);
+    Optional<Server> find(int id);
 
     /**
      * Finds a server in the database.

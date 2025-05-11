@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS account(
     creation_date TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- I use the discord username validation since they fit our use cases.
-    CONSTRAINT chk_username_valid CHECK (
-            LENGTH(username) > 2 AND
-            username  ~ '^[a-z0-9_.]+$' AND
-            username !~ '\\.\\.'
+    CONSTRAINT chk_account_username_valid CHECK (
+        LENGTH(username) > 2 AND
+        username  ~ '^[a-z0-9_.]+$' AND
+        username !~ '\\.\\.'
     )
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS server(
     heartbeat_period INT          NOT NULL DEFAULT 5000,
 
     CONSTRAINT u_server_ip_port UNIQUE(ip_address, port),
-    CONSTRAINT chk_port_valid CHECK (port >= 0 AND port <= 65535)
+    CONSTRAINT chk_server_port_valid CHECK (port >= 0 AND port <= 65535)
 );
 
 CREATE TABLE IF NOT EXISTS login(
@@ -92,13 +92,31 @@ CREATE TABLE IF NOT EXISTS report_reply(
     CONSTRAINT fk_report_reply_report FOREIGN KEY(report_id) REFERENCES report(id) ON DELETE CASCADE
 );
 
+CREATE TYPE punishment_issuer_type AS ENUM ('account', 'server');
+
+CREATE TABLE IF NOT EXISTS punishment_issuer(
+    id              SERIAL                 PRIMARY KEY,
+    type            punishment_issuer_type NOT NULL,
+    account_id      INT                    NULL DEFAULT NULL,
+    server_id       INT                    NULL DEFAULT NULL,
+
+    CONSTRAINT fk_punishment_issuer_account FOREIGN KEY(account_id) REFERENCES account(id),
+    CONSTRAINT fk_punishment_issuer_server  FOREIGN KEY(server_id)  REFERENCES server(id),
+    CONSTRAINT chk_punishment_issuer_exclusive CHECK (
+        (type = 'account' AND account_id IS NOT NULL AND server_id  IS NULL) OR
+        (type = 'server'  AND server_id  IS NOT NULL AND account_id IS NULL)
+    ),
+    -- Unique to avoid generating duplicate data.
+    CONSTRAINT u_punishment_issuer UNIQUE (type, account_id, server_id)
+);
+
 CREATE TABLE IF NOT EXISTS ban(
 
     id              SERIAL      PRIMARY KEY,
     -- Random value used to search for this ban.
     uuid            BIGINT      NOT NULL UNIQUE,
     account_id      INT         NOT NULL,
-    staff_id        INT         NOT NULL,
+    issuer_id       INT         NOT NULL,
     server_id       INT         NOT NULL,
     reason          TEXT        NOT NULL,
     handled         BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
@@ -107,33 +125,36 @@ CREATE TABLE IF NOT EXISTS ban(
     expiration_date TIMESTAMPTZ NULL DEFAULT NULL,
 
     CONSTRAINT fk_ban_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_ban_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
-    CONSTRAINT fk_ban_server FOREIGN KEY(server_id)  REFERENCES server(id)
+    CONSTRAINT fk_ban_issuer FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
+    CONSTRAINT fk_ban_server FOREIGN KEY(server_id)  REFERENCES server(id),
+    CONSTRAINT chk_ban_expiration_after_creation CHECK (
+        expiration_date IS NULL OR creation_date <= expiration_date
+    )
 );
 
 CREATE TABLE IF NOT EXISTS unban(
 
     id            SERIAL      PRIMARY KEY,
     ban_id        INT         NOT NULL UNIQUE,
-    staff_id      INT         NOT NULL,
+    issuer_id     INT         NOT NULL,
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_unban_ban   FOREIGN KEY(ban_id)   REFERENCES ban(id),
-    CONSTRAINT fk_unban_staff FOREIGN KEY(staff_id) REFERENCES account(id)
+    CONSTRAINT fk_unban_ban    FOREIGN KEY(ban_id)    REFERENCES ban(id),
+    CONSTRAINT fk_unban_issuer FOREIGN KEY(issuer_id) REFERENCES punishment_issuer(id)
 );
 
 CREATE TABLE IF NOT EXISTS kick(
 
     id            SERIAL      PRIMARY KEY,
     account_id    INT         NOT NULL,
-    staff_id      INT         NOT NULL,
+    issuer_id     INT         NOT NULL,
     server_id     INT         NOT NULL,
     reason        TEXT        NOT NULL,
     handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_kick_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_kick_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
+    CONSTRAINT fk_kick_issuer FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
     CONSTRAINT fk_kick_server FOREIGN KEY(server_id)  REFERENCES server(id)
 );
 
@@ -141,14 +162,14 @@ CREATE TABLE IF NOT EXISTS warn(
 
     id            SERIAL      PRIMARY KEY,
     account_id    INT         NOT NULL,
-    staff_id      INT         NOT NULL,
+    issuer_id     INT         NOT NULL,
     server_id     INT         NOT NULL,
     reason        TEXT        NOT NULL,
     handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_warn_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_warn_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
+    CONSTRAINT fk_ban_issuer  FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
     CONSTRAINT fk_warn_server FOREIGN KEY(server_id)  REFERENCES server(id)
 );
 
@@ -156,15 +177,18 @@ CREATE TABLE IF NOT EXISTS mute(
 
     id              SERIAL      PRIMARY KEY,
     account_id      INT         NOT NULL,
-    staff_id        INT         NOT NULL,
+    issuer_id       INT         NOT NULL,
     server_id       INT         NOT NULL,
     reason          TEXT        NOT NULL,
     creation_date   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expiration_date TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_mute_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_mute_staff  FOREIGN KEY(staff_id)   REFERENCES account(id),
-    CONSTRAINT fk_mute_server FOREIGN KEY(server_id)  REFERENCES server(id)
+    CONSTRAINT fk_ban_issuer  FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
+    CONSTRAINT fk_mute_server FOREIGN KEY(server_id)  REFERENCES server(id),
+    CONSTRAINT chk_mute_expiration_after_creation CHECK (
+        expiration_date IS NULL OR creation_date <= expiration_date
+    )
 );
 
 CREATE TABLE IF NOT EXISTS ban_appeal(
@@ -195,12 +219,12 @@ CREATE TABLE IF NOT EXISTS ban_appeal_reply(
 CREATE TABLE IF NOT EXISTS ip_blacklist(
 
     id            SERIAL      PRIMARY KEY,
-    staff_id      INT         NOT NULL,
+    issuer_id     INT         NOT NULL,
     ip_address    INET        NOT NULL UNIQUE,
     reason        TEXT        NOT NULL DEFAULT '',
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_ip_blacklist_staff FOREIGN KEY(staff_id) REFERENCES account(id)
+    CONSTRAINT fk_ban_issuer FOREIGN KEY(issuer_id) REFERENCES punishment_issuer(id)
 );
 
 CREATE TABLE IF NOT EXISTS role(

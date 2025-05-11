@@ -33,7 +33,7 @@ public final class DatabaseImpl implements Database {
         this.config = Objects.requireNonNull(config);
         this.auth = new AccountQueriesImpl(dsl, config);
         this.server = new ServerQueriesImpl(dsl);
-        this.punishment = new PunishmentQueriesImpl(dsl, auth);
+        this.punishment = new PunishmentQueriesImpl(dsl, auth, server);
         this.role = new RoleQueriesImpl(dsl);
         try { this.punishmentListeners = new PunishmentListenersImpl(dsl);
         } catch (SQLException e) {
