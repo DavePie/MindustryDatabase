@@ -15,6 +15,10 @@ public interface PunishmentQueries {
 
     // TODO Retrieve only the latest ban.
 
+    // TODO Retrieve latest mute.
+
+    // TODO Retrieve unseen warns.
+
     List<Ban> activeBans(Account account);
 
     Optional<Ban> findBan(long uuid);
@@ -24,6 +28,8 @@ public interface PunishmentQueries {
     Optional<Kick> findKick(int id);
 
     Optional<Warn> findWarn(int id);
+
+    Optional<Mute> findMute(int id);
 
     Ban infiteBan(Account punished, Issuer issuer, String reason, Server server);
 
@@ -36,6 +42,10 @@ public interface PunishmentQueries {
     Warn warn(Account punished, Issuer issuer, String reason, Server server);
 
     UnbanStatus unban(Ban ban, Issuer issuer);
+
+    Mute mute(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration);
+
+    Mute mute(Account punished, Issuer issuer, String reason, Server server, Duration duration);
 
     /// @param unban the row of the issued unban.
     /// @param alreadyUnbanned true if the ban has already been unbanned, false if the ban has just been unbanned.

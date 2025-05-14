@@ -285,3 +285,6 @@ FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
 
 CREATE TRIGGER notify_insert_warn AFTER INSERT ON warn
 FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+
+CREATE TRIGGER notify_insert_mute AFTER INSERT ON mute
+FOR EACH ROW EXECUTE FUNCTION notify_on_insert();

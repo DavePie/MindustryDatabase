@@ -87,6 +87,34 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         });
     }
 
+    private Mute muteQuery(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration) {
+
+        Objects.requireNonNull(punished);
+        Objects.requireNonNull(issuer);
+        Objects.requireNonNull(reason);
+        Objects.requireNonNull(server);
+        Objects.requireNonNull(creation);
+        Objects.requireNonNull(expiration);
+        if (expiration.isBefore(creation)) throw new IllegalArgumentException("The expiration date is before the creation date.");
+
+        return dsl.transactionResult(ctx -> {
+
+            final DSLContext tDsl = ctx.dsl();
+            final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
+
+            return tDsl.insertInto(MUTE)
+                    .set(MUTE.ACCOUNT_ID,      punished.id())
+                    .set(MUTE.ISSUER_ID,       issuerId)
+                    .set(MUTE.REASON,          reason)
+                    .set(MUTE.SERVER_ID,       server.id())
+                    .set(MUTE.CREATION_DATE,   creation)
+                    .set(MUTE.EXPIRATION_DATE, expiration)
+                    .returningResult(MUTE)
+                    .fetchOptionalInto(Mute.class)
+                    .orElseThrow();
+        });
+    }
+
     @Override
     public Optional<Issuer> findIssuer(int id) {
 
@@ -136,6 +164,13 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         return dsl.selectFrom(WARN)
                 .where(WARN.ID.eq(id))
                 .fetchOptionalInto(Warn.class);
+    }
+
+    @Override
+    public Optional<Mute> findMute(int id) {
+        return dsl.selectFrom(MUTE)
+                .where(MUTE.ID.eq(id))
+                .fetchOptionalInto(Mute.class);
     }
 
     @Override
@@ -232,5 +267,17 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
                     .map(result -> new UnbanStatus(result, true))
                     .orElseThrow();
         });
+    }
+
+    @Override
+    public Mute mute(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration) {
+        return muteQuery(punished, issuer, reason, server, creation, expiration);
+    }
+
+    @Override
+    public Mute mute(Account punished, Issuer issuer, String reason, Server server, Duration duration) {
+        Objects.requireNonNull(duration);
+        final var now = OffsetDateTime.now();
+        return muteQuery(punished, issuer, reason, server, now, now.plus(duration));
     }
 }

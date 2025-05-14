@@ -13,6 +13,7 @@ public interface PunishmentListeners {
     enum Type {
         BAN,
         KICK,
-        WARN
+        WARN,
+        MUTE
     }
 }

@@ -116,4 +116,26 @@ public final class PunishmentQueriesTest {
         });
         db.punishmentListeners().unregister(PunishmentListeners.Type.WARN, listener);
     }
+
+    @ParameterizedTest
+    @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
+    void mute(String reason) {
+
+        final CompletableFuture<Integer> future = new CompletableFuture<>();
+        final IntConsumer listener = future::complete;
+        db.punishmentListeners().register(PunishmentListeners.Type.MUTE, listener);
+
+        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.auth()
+                .find(USER_STAFF)
+                .map(PunishmentQueries.Issuer::of)
+                .orElseThrow();
+
+        final Mute mute = db.punishment().mute(punished, punisher, reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS));
+        Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
+            final int id = future.get();
+            Assertions.assertEquals(mute.id(), id);
+        });
+        db.punishmentListeners().unregister(PunishmentListeners.Type.MUTE, listener);
+    }
 }

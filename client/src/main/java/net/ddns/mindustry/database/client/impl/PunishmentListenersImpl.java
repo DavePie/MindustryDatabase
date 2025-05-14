@@ -20,23 +20,24 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
 
     private static final String PREFIX = "channel_insert_";
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
-    private final Map<Type, Holder> listeners = Map.of(
-            Type.BAN , new Holder(),
-            Type.KICK, new Holder(),
-            Type.WARN, new Holder());
+    private final HashMap<Type, Holder> listeners = new HashMap<>();
     private final DSLContext dsl;
     private final PgConnection pgCon;
     private final ScheduledFuture<?> notificationThread;
 
     public PunishmentListenersImpl(DSLContext dsl) throws SQLException {
+
         this.dsl = Objects.requireNonNull(dsl);
         this.pgCon = Objects.requireNonNull(dsl.configuration()
                         .connectionProvider()
                         .acquire(), "Could not retrieve the DSLContext connection.")
                 .unwrap(PgConnection.class);
-        dsl.execute(listenSqlFor(Type.BAN));
-        dsl.execute(listenSqlFor(Type.KICK));
-        dsl.execute(listenSqlFor(Type.WARN));
+
+        // I initialize the holders and I start to listen.
+        for (Type type : Type.values()) {
+            listeners.put(type, new Holder());
+            dsl.execute(listenSqlFor(type));
+        }
         this.notificationThread = executor.scheduleAtFixedRate(this::notificationListener, 1, 1, TimeUnit.SECONDS);
     }
 
@@ -45,6 +46,7 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
             case BAN  -> Tables.BAN;
             case KICK -> Tables.KICK;
             case WARN -> Tables.WARN;
+            case MUTE -> Tables.MUTE;
         }).getName();
         return "LISTEN " + PREFIX + name;
     }
@@ -53,6 +55,7 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
         if (channel.equals(PREFIX + Tables.BAN .getName())) return Type.BAN;
         if (channel.equals(PREFIX + Tables.KICK.getName())) return Type.KICK;
         if (channel.equals(PREFIX + Tables.WARN.getName())) return Type.WARN;
+        if (channel.equals(PREFIX + Tables.MUTE.getName())) return Type.MUTE;
         throw new IllegalStateException("Could not handle channel: " + channel);
     }
 
