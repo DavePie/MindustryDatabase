@@ -13,6 +13,8 @@ public interface PunishmentQueries {
 
     Optional<Issuer> findIssuer(int id);
 
+    // TODO Retrieve only the latest ban.
+
     List<Ban> activeBans(Account account);
 
     Optional<Ban> findBan(long uuid);
@@ -25,7 +27,7 @@ public interface PunishmentQueries {
 
     Ban infiteBan(Account punished, Issuer issuer, String reason, Server server);
 
-    Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime expiration);
+    Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration);
 
     Ban ban(Account punished, Issuer issuer, String reason, Server server, Duration duration);
 

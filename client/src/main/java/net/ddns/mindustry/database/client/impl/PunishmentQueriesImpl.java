@@ -55,13 +55,14 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         }).fetchOptionalInto(PunishmentIssuer.class).orElseThrow(); // Always present.
     }
 
-    private Ban banQuery(Account punished, Issuer issuer, String reason, Server server, @Nullable OffsetDateTime expiration) {
+    private Ban banQuery(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, @Nullable OffsetDateTime expiration) {
 
         Objects.requireNonNull(punished);
         Objects.requireNonNull(issuer);
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
-        // Expiration can be nullable.
+        Objects.requireNonNull(creation);
+        if (expiration != null && expiration.isBefore(creation)) throw new IllegalArgumentException("The expiration date is before the creation date.");
 
         return dsl.transactionResult(ctx -> {
 
@@ -78,6 +79,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
                     .set(BAN.REASON,          reason)
                     .set(BAN.SERVER_ID,       server.id())
                     .set(BAN.UUID,            randomUuid)
+                    .set(BAN.CREATION_DATE,   creation)
                     .set(BAN.EXPIRATION_DATE, expiration)
                     .returningResult(BAN)
                     .fetchOptionalInto(Ban.class)
@@ -138,19 +140,20 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public Ban infiteBan(Account punished, Issuer issuer, String reason, Server server) {
-        return banQuery(punished, issuer, reason, server, null);
+        return banQuery(punished, issuer, reason, server, OffsetDateTime.now(), null);
     }
 
     @Override
-    public Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime expiration) {
+    public Ban ban(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration) {
         Objects.requireNonNull(expiration);
-        return banQuery(punished, issuer, reason, server, expiration);
+        return banQuery(punished, issuer, reason, server, creation, expiration);
     }
 
     @Override
     public Ban ban(Account punished, Issuer issuer, String reason, Server server, Duration duration) {
         Objects.requireNonNull(duration);
-        return ban(punished, issuer, reason, server, OffsetDateTime.now().plus(duration));
+        final var now = OffsetDateTime.now();
+        return banQuery(punished, issuer, reason, server, now, now.plus(duration));
     }
 
     @Override
