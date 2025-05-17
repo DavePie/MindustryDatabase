@@ -22,7 +22,6 @@ fun loadUnprivilegedCommands(handler: CommandHandler) {
     handler.register("signup", "Creates a new account.", ::signup)
     handler.register("logout", "Logs you out of your current account.", ::logout)
 
-    handler.register("change-display-name", "Changes your display name.", ::changeDisplayName)
     handler.register("change-password", "Changes your password.", ::changePassword)
 }
 
@@ -63,7 +62,7 @@ private fun callbackLoginPassword(player: Player, text: String?, args: Array<Str
     playerToUsernameMap.remove(player)
 
     val loginResult = database!!.auth().login(
-        username, text.toCharArray(), player.ip(),
+        username!!, text.toCharArray(), player.ip(),
         player.uuid(), configSessionDuration.num()
     )
 
@@ -72,10 +71,7 @@ private fun callbackLoginPassword(player: Player, text: String?, args: Array<Str
                 "invalid. Please ensure that you've entered the correct credentials and that you've signed up.")
         is AlreadyLoggedIn -> Call.infoMessage(player.con(), "[orange]Already signed in.")
         is LoggedIn -> {
-            val displayName = loginResult.account.displayName
-
             player.team(Team.sharded)
-            player.name(displayName)
             player.sendMessage("Logged in successfully.")
         }
         // The else is not needed. This should throw an error if all case aren't accounted for.
@@ -91,7 +87,7 @@ private fun callbackLoginPassword(player: Player, text: String?, args: Array<Str
 
 private fun signup(args: Array<String>, player: Player) {
     textInputHandler.addTextInput(
-        "[gold]Signup (1/3)",
+        "[gold]Signup (1/2)",
         "Type in the username you'll use for your account (this [scarlet]cannot[] be changed)",
         ::callbackSignupUsername,
         32
@@ -107,23 +103,8 @@ private fun callbackSignupUsername(player: Player, text: String?, args: Array<St
     playerToUsernameMap[player] = text
 
     textInputHandler.addTextInput(
-        "[gold]Signup (2/3)",
+        "[gold]Signup (2/2)",
         "Type in the display name you wish to use (this can be changed later)",
-        ::callbackSignupDisplayName
-    ).show()
-}
-
-private fun callbackSignupDisplayName(player: Player, text: String?, args: Array<String>) {
-    if (text == null) {
-        Log.warn("Cancelling signup at display name step.")
-        return
-    }
-
-    playerToDisplayName[player] = text
-
-    textInputHandler.addTextInput(
-        "[gold]Signup (3/3)",
-        "Type in the password you'll use for your account (this will not be verified)",
         ::callbackSignupPassword
     ).show()
 }
@@ -135,12 +116,11 @@ private fun callbackSignupPassword(player: Player, text: String?, args: Array<St
     }
 
     val username = playerToUsernameMap[player]
-    val displayName = playerToDisplayName[player]
 
     playerToUsernameMap.remove(player)
     playerToDisplayName.remove(player)
 
-    val signupStatus = database!!.auth().signup(username, text.toCharArray(), displayName, player.ip(), player.uuid())
+    val signupStatus = database!!.auth().signup(username!!, text.toCharArray(), player.ip(), player.uuid())
 
     when (signupStatus) {
         is UsernameInUse -> {
@@ -171,34 +151,6 @@ private fun logout(args: Array<String>, player: Player) {
     player.team(Team.derelict)
     player.unit().kill()
     player.sendMessage("Logged out successfully.")
-}
-
-
-
-private fun changeDisplayName(args: Array<String>, player: Player) {
-    textInputHandler.addTextInput(
-        "[gold]Change display name (1/2)",
-        "Type in the new display name you wish to use",
-        ::callbackChangeDisplayName
-    ).show()
-}
-
-private fun callbackChangeDisplayName(player: Player, text: String?, args: Array<String>) {
-    if (text == null) {
-        Log.warn("Cancelling display name change at display name step.")
-        return
-    }
-
-    val account = database!!.auth().find(player.ip(), player.uuid())
-
-    if (account.isEmpty) {
-        Call.infoMessage(player.con(), "[orange]There is either no active session or you're not logged in.")
-        return
-    }
-
-    database!!.auth().updateDisplayName(account.get(), text)
-    player.name(text)
-    player.sendMessage("Changed display name successfully.")
 }
 
 

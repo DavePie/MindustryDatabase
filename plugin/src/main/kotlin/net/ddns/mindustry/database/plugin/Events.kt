@@ -30,7 +30,7 @@ private fun playerConnect(event: PlayerConnect) {
         return
     }
 
-    val status = database!!.auth().joinsServer(server.get(), event.player.ip(), event.player.uuid())
+    val status = database!!.auth().joinsServer(server.get(), event.player.name(), event.player.ip(), event.player.uuid())
 
     when (status) {
         is AccountQueries.JoinStatus.NotAuthenticated -> {
@@ -44,8 +44,6 @@ private fun playerConnect(event: PlayerConnect) {
         is AccountQueries.JoinStatus.NotAuthorized -> event.player.kick("You're not authorized to join this server.", 0)
 
         is AccountQueries.JoinStatus.Joined -> {
-            val displayName = status.account().displayName()
-            event.player.name(displayName)
             event.player.sendMessage("[gold]Welcome back to the server!")
         }
     }
