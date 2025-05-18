@@ -37,11 +37,11 @@ public final class PunishmentQueriesTest {
 
         Assertions.assertInstanceOf(
                 AccountQueries.SignupStatus.Created.class,
-                db.auth().signup(USER_PUNISHED, account.password(), account.ip(), account.uuid()));
+                db.auth().signup(USER_PUNISHED, account.password(), account.ip(), account.uuid(), Duration.ofHours(1), 2));
 
         Assertions.assertInstanceOf(
                 AccountQueries.SignupStatus.Created.class,
-                db.auth().signup(USER_STAFF, account.password(), account.ip(), account.uuid()));
+                db.auth().signup(USER_STAFF, account.password(), account.ip(), account.uuid(), Duration.ofHours(1), 2));
 
         db.server().add(server.ip(), server.port(), server.name());
     }

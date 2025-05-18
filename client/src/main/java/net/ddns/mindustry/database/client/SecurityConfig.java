@@ -9,59 +9,93 @@ import java.util.Objects;
 
 /// Class containing the hash configuration for sessions and passwords.
 @NullMarked
-public final class SecurityConfig {
+public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int argon2Iteration, int argon2Memory, int argon2Parallelism, int minimumPasswordLength) {
 
-    private final MessageDigest sessionDigest;
-    private final Argon2 argon2;
-    private final int argon2Iteration;
-    private final int argon2Memory;
-    private final int argon2Parallelism;
+    public SecurityConfig {
+        Objects.requireNonNull(sessionDigest);
+        Objects.requireNonNull(argon2);
+        if (minimumPasswordLength <= 0) throw new IllegalArgumentException("The minimum password length cannot be 0 or negative.");
+    }
 
     public SecurityConfig(String sessionAlgorithm,
                           int saltLength,
                           int hashLength,
                           int argon2Iteration,
                           int argon2Memory,
-                          int argon2Parallelism) throws NoSuchAlgorithmException {
-        Objects.requireNonNull(sessionAlgorithm);
-        this.sessionDigest = MessageDigest.getInstance(sessionAlgorithm);
-        // ARGON2id by default.
-        this.argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, saltLength, hashLength);
-        this.argon2Iteration = argon2Iteration;
-        this.argon2Memory = argon2Memory;
-        this.argon2Parallelism = argon2Parallelism;
-    }
-
-    public SecurityConfig(int saltLength,
-                    int hashLength,
-                    int argon2Iteration,
-                    int argon2Memory,
-                    int argon2Parallelism) throws NoSuchAlgorithmException {
-        // The default is Sha-256, a good default in terms of speed and security.
-        this("SHA-256", saltLength, hashLength, argon2Iteration, argon2Memory, argon2Parallelism);
-    }
-
-    public MessageDigest sessionHash() {
-        return sessionDigest;
-    }
-
-    public Argon2 passHash() {
-        return argon2;
+                          int argon2Parallelism,
+                          int minimumPasswordLength) throws NoSuchAlgorithmException {
+        this(MessageDigest.getInstance(Objects.requireNonNull(sessionAlgorithm)),
+                // ARGON2id by default.
+                Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, saltLength, hashLength),
+                argon2Iteration,
+                argon2Memory,
+                argon2Parallelism,
+                minimumPasswordLength);
     }
 
     public String hashPass(char[] password) {
-        return passHash().hash(argon2Iteration(), argon2Memory(), argon2Parallelism(), password);
+        return argon2().hash(argon2Iteration(), argon2Memory(), argon2Parallelism(), password);
     }
 
-    public int argon2Iteration() {
-        return argon2Iteration;
-    }
+    public static final class Builder {
 
-    public int argon2Memory() {
-        return argon2Memory;
-    }
+        private String sessionAlgorithm = "SHA-256";
+        private int saltLength;
+        private int hashLength;
+        private int argon2Iteration;
+        private int argon2Memory;
+        private int argon2Parallelism;
+        private int minimumPasswordLength = 5;
 
-    public int argon2Parallelism() {
-        return argon2Parallelism;
+        private Builder() {}
+
+        public static Builder create() {
+            return new Builder();
+        }
+
+        public Builder sessionAlgorithm(String algorithm) {
+            this.sessionAlgorithm = Objects.requireNonNull(algorithm);
+            return this;
+        }
+
+        public Builder saltLength(int length) {
+            this.saltLength = length;
+            return this;
+        }
+
+        public Builder hashLength(int length) {
+            this.hashLength = length;
+            return this;
+        }
+
+        public Builder argon2Iteration(int iterations) {
+            this.argon2Iteration = iterations;
+            return this;
+        }
+
+        public Builder argon2Memory(int memory) {
+            this.argon2Memory = memory;
+            return this;
+        }
+
+        public Builder argon2Parallelism(int parallelism) {
+            this.argon2Parallelism = parallelism;
+            return this;
+        }
+
+        public Builder minimumPasswordLength(int length) {
+            this.minimumPasswordLength = length;
+            return this;
+        }
+
+        public SecurityConfig build() throws NoSuchAlgorithmException {
+            return new SecurityConfig(sessionAlgorithm,
+                    saltLength,
+                    hashLength,
+                    argon2Iteration,
+                    argon2Memory,
+                    argon2Parallelism,
+                    minimumPasswordLength);
+        }
     }
 }

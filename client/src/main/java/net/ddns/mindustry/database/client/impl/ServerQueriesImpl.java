@@ -6,24 +6,15 @@ import org.jooq.DSLContext;
 import org.jooq.postgres.extensions.types.Inet;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
 public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
-
-    static Inet inet(String ip) throws IllegalArgumentException {
-        Objects.requireNonNull(ip);
-        try { return Inet.inet(InetAddress.getByName(ip));
-        } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("The provided IP address is invalid.", e);
-        }
-    }
 
     Optional<Server> find(DSLContext tDsl, int id) {
         Objects.requireNonNull(tDsl);

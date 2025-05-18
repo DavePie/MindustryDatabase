@@ -6,6 +6,8 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
+import org.jooq.postgres.extensions.types.Inet;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
+import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
@@ -22,7 +25,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     private byte[] createSessionHash(String ip, String uuid) {
         Objects.requireNonNull(ip);
         Objects.requireNonNull(uuid);
-        return security().sessionHash().digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
+        return security().sessionDigest().digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
     }
 
     /// @return the account id, if the session is present and not expired, or else, the empty optional.
@@ -39,19 +42,81 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 }).findFirst();
     }
 
-    /// Creates a new session if not present, else updates the previous one with the new information.
-    private void updateSession(DSLContext tDsl, int accountId, byte[] session, int durationHours) throws DataAccessException {
+    /// Adds a new Login entry and creates a new session if not present,
+    /// else updates the previous one with the new information.
+    private void authenticate(DSLContext tDsl, int accountId, Inet ip, byte[] session, Duration duration) throws DataAccessException {
 
-        final var expiration = OffsetDateTime.now().plusHours(durationHours);
+        // I insert the account login.
+        tDsl.insertInto(LOGIN)
+                .set(LOGIN.ACCOUNT_ID, accountId)
+                .set(LOGIN.IP_ADDRESS, ip)
+                .execute();
+
+        // I update the session cookie to allow the user to not authenticate everytime they join.
+        final var expiration = OffsetDateTime.now().plus(duration);
         tDsl.insertInto(ACCOUNT_SESSION)
                 .set(ACCOUNT_SESSION.ACCOUNT_ID, accountId)
                 .set(ACCOUNT_SESSION.SESSION_COOKIE, session)
                 .set(ACCOUNT_SESSION.EXPIRATION_DATE, expiration)
-                .onConflict()
+                .onConflict(ACCOUNT_SESSION.SESSION_COOKIE)
                 .doUpdate()
                 .set(ACCOUNT_SESSION.SESSION_COOKIE, session)
                 .set(ACCOUNT_SESSION.EXPIRATION_DATE, expiration)
                 .execute();
+    }
+
+    private int countAccounts(DSLContext tDsl, Inet userIp) {
+        // TODO Check if this is enough. maybe when an user uses the same ip to authenticates with different accounts.
+        return tDsl.select(DSL.countDistinct(LOGIN.ACCOUNT_ID))
+                .from(LOGIN)
+                .where(LOGIN.IP_ADDRESS.eq(userIp))
+                .fetchOptionalInto(Integer.class)
+                .orElseThrow(() -> new IllegalStateException("Could not count the accounts."));
+    }
+
+    private LoginStatus login(DSLContext tDsl, String username, char[] password, Inet ip, byte[] session, Duration duration) {
+
+        // Computationally expensive hash.
+        // I hash and update it on the database, because if the password is correct,
+        // I want to update it using the latest security configuration.
+        // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
+        // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
+        final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
+
+        final Account account = find(tDsl, username).orElse(null);
+        if (account == null) {
+            security().hashPass(password); // Wasteful operation to avoid username scanning.
+            return new LoginStatus.WrongCredentials();
+        }
+
+        final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
+        if (!security().argon2().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
+
+        tDsl.update(ACCOUNT)
+                // I update the password with the latest argon2 configuration.
+                .set(ACCOUNT.PASSWORD, hashedPassword)
+                .where(ACCOUNT.ID.eq(account.id()))
+                .execute();
+
+        // I create a new session, or update the previous one for the user.
+        authenticate(tDsl, account.id(), ip, session, duration);
+
+        return new LoginStatus.LoggedIn(account);
+    }
+
+    public SignupStatus signup(DSLContext tDsl, String username, byte[] password) {
+        return tDsl.insertInto(ACCOUNT)
+                .set(ACCOUNT.USERNAME, username)
+                .set(ACCOUNT.PASSWORD, password)
+                .onConflict(ACCOUNT.USERNAME)
+                .doNothing()
+                .returningResult(ACCOUNT)
+                .fetchOptionalInto(Account.class)
+                .map(SignupStatus.Created::new)
+                // I do this to be able to provide a different class in the orElse.
+                .map(status -> (SignupStatus) status)
+                // The row has not been added, meaning the query when on conflict, meaning the username already exists.
+                .orElseGet(() -> new SignupStatus.UsernameInUse(username));
     }
 
     public Optional<Account> find(DSLContext tDsl, String username) {
@@ -102,50 +167,18 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public LoginStatus login(String username, char[] password, String ip, String uuid, int durationHours) {
+    public LoginStatus login(String username, char[] password, String ip, String uuid, Duration sessionDuration) {
 
         Objects.requireNonNull(username);
         Objects.requireNonNull(password);
-        if (durationHours <= 0) throw new IllegalArgumentException("The hours cannot be negative or 0.");
-
-        final byte[] session = createSessionHash(ip, uuid);
+        Objects.requireNonNull(sessionDuration);
 
         try {
-            return dsl.transactionResult(ctx -> {
-
-                final DSLContext tDsl = ctx.dsl();
-                // I return if the user is already authenticated.
-                if (sessionAccountId(tDsl, session).isPresent()) return new LoginStatus.AlreadyLoggedIn();
-
-                // Computationally expensive hash.
-                // I hash and update it on the database, because if the password is correct,
-                // I want to update it using the latest security configuration.
-                // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
-                // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
-                final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
-
-                final Account account = find(tDsl, username).orElse(null);
-                if (account == null) {
-                    security().hashPass(password); // Wasteful operation to avoid username scanning.
-                    return new LoginStatus.WrongCredentials();
-                }
-
-                final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
-                if (!security().passHash().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
-
-                tDsl.update(ACCOUNT)
-                        // I update the password with the latest argon2 configuration.
-                        .set(ACCOUNT.PASSWORD, hashedPassword)
-                        .where(ACCOUNT.ID.eq(account.id()))
-                        .execute();
-
-                // I create a new session, or update the previous one for the user.
-                updateSession(tDsl, account.id(), session, durationHours);
-
-                return new LoginStatus.LoggedIn(account);
-            });
+            final byte[] session = createSessionHash(ip, uuid);
+            final Inet inet = inet(ip);
+            return dsl.transactionResult(ctx -> login(ctx.dsl(), username, password, inet, session, sessionDuration));
         } finally {
-            security().passHash().wipeArray(password);
+            security().argon2().wipeArray(password);
         }
     }
 
@@ -158,30 +191,34 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public SignupStatus signup(String username, char[] password, String ip, String uuid) {
+    public SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration, int accountsLimit) {
 
-        if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidUsername();
+        if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidUsername(username);
         Objects.requireNonNull(password);
 
+        final Inet inet = inet(ip);
+        final byte[] session = createSessionHash(ip, uuid);
         // I do this here to make the signup operation slow in every case.
         final byte[] hashedPass = security.hashPass(password).getBytes(StandardCharsets.UTF_8);
 
         // The password is too short.
-        if (password.length <= 4) return new SignupStatus.InvalidPassword();
-        // TODO Account checking.
+        if (password.length < security().minimumPasswordLength()) return new SignupStatus.InvalidPassword();
 
         try {
-            final Account account = dsl.insertInto(ACCOUNT)
-                    .set(ACCOUNT.USERNAME, username)
-                    .set(ACCOUNT.PASSWORD, hashedPass)
-                    .onConflict(ACCOUNT.USERNAME)
-                    .doNothing()
-                    .returningResult(ACCOUNT)
-                    .fetchOneInto(Account.class);
+            return dsl.transactionResult(ctx -> {
 
-            return account == null ? new SignupStatus.UsernameInUse() : new SignupStatus.Created(account);
+                final DSLContext tDsl = ctx.dsl();
+                final int accounts = countAccounts(tDsl, inet);
+                if (accountsLimit <= accounts) return new SignupStatus.LimitReached(accountsLimit);
+
+                final SignupStatus status = signup(tDsl, username, hashedPass);
+                if (status instanceof SignupStatus.Created(Account account)) {
+                    authenticate(tDsl, account.id(), inet, session, sessionDuration);
+                }
+                return status;
+            });
         } finally {
-            security.passHash().wipeArray(password);
+            security.argon2().wipeArray(password);
         }
     }
 
@@ -241,7 +278,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
             // I do this here to take the same amount of time if the old password is wrong.
             final byte[] hashed = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
-            if (!security().passHash().verify(dbPassword, oldPassword)) return new PasswordUpdateStatus.WrongPassword();
+            if (!security().argon2().verify(dbPassword, oldPassword)) return new PasswordUpdateStatus.WrongPassword();
 
             dsl.update(ACCOUNT)
                     .set(ACCOUNT.PASSWORD, hashed)
@@ -250,8 +287,8 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
             return new PasswordUpdateStatus.Updated();
         } finally {
-            security.passHash().wipeArray(oldPassword);
-            security.passHash().wipeArray(newPassword);
+            security.argon2().wipeArray(oldPassword);
+            security.argon2().wipeArray(newPassword);
         }
     }
 }

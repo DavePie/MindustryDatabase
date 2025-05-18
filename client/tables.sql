@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS login(
 
     CONSTRAINT fk_login_user FOREIGN KEY(account_id) REFERENCES account(id)
 );
+-- When creating a new account, to limit the amount of account that can be created, the whole table is checked for IP addresses.
+-- So an Index will really improve performances in this case.
+CREATE INDEX idx_login_ip_address ON login(ip_address);
 
 CREATE TABLE IF NOT EXISTS account_session(
 

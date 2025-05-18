@@ -5,6 +5,7 @@ import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.exception.DataAccessException;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,9 +26,9 @@ public interface AccountQueries {
     /// @param username the username of the account.
     /// @param password the password of the account.
     /// @param ip the ip of player used
-    /// @param durationHours the duration of the session in hours.
+    /// @param sessionDuration the duration of the session.
     /// @apiNote the password will be wiped after calling this method.
-    LoginStatus login(String username, char[] password, String ip, String uuid, int durationHours) throws DataAccessException;
+    LoginStatus login(String username, char[] password, String ip, String uuid, Duration sessionDuration) throws DataAccessException;
 
     void logout(Account account) throws DataAccessException;
 
@@ -36,7 +37,10 @@ public interface AccountQueries {
     /// @param password the new account password.
     /// @param ip the player address for internal checks.
     /// @param uuid the player uuid for internal checks.
-    SignupStatus signup(String username, char[] password, String ip, String uuid);
+    /// @param sessionDuration the duration of the session.
+    /// @param accountsLimit the number of accounts allowed for a single user, the recommended amount is 5.
+    /// @apiNote the password will be wiped after calling this method.
+    SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration, int accountsLimit);
 
     JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException;
 
@@ -72,13 +76,24 @@ public interface AccountQueries {
             }
         }
 
-        record InvalidUsername() implements SignupStatus {}
+        record InvalidUsername(String username) implements SignupStatus {
+            public InvalidUsername {
+                Objects.requireNonNull(username);
+            }
+        }
 
         ///  When the password does not fit security criteria.
         record InvalidPassword() implements SignupStatus {}
 
         /// The username provided by the user is already in use.
-        record UsernameInUse() implements SignupStatus {}
+        record UsernameInUse(String username) implements SignupStatus {
+            public UsernameInUse {
+                Objects.requireNonNull(username);
+            }
+        }
+
+        /// The user reached its limit of account creations.
+        record LimitReached(int limit) implements SignupStatus {}
     }
 
     sealed interface JoinStatus {

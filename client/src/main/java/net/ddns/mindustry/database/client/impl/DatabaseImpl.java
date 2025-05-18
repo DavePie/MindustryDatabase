@@ -3,8 +3,11 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.*;
 import org.jooq.CloseableDSLContext;
 import org.jooq.impl.DSL;
+import org.jooq.postgres.extensions.types.Inet;
 import org.jspecify.annotations.NullMarked;
 import org.postgresql.Driver;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.Objects;
 
@@ -38,6 +41,14 @@ public final class DatabaseImpl implements Database {
         try { this.punishmentListeners = new PunishmentListenersImpl(dsl);
         } catch (SQLException e) {
             throw new RuntimeException("Could not start the punishment lister task.", e);
+        }
+    }
+
+    public static Inet inet(String ip) throws IllegalArgumentException {
+        Objects.requireNonNull(ip);
+        try { return Inet.inet(InetAddress.getByName(ip));
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("The provided IP address is invalid.", e);
         }
     }
 

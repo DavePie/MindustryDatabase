@@ -53,9 +53,15 @@ public final class DbInitialization {
 
         clearDatabase(url, user, pass);
 
+        final var builder = SecurityConfig.Builder.create()
+                .saltLength(16)
+                .hashLength(128)
+                .argon2Iteration(10)
+                .argon2Memory(20)
+                .argon2Parallelism(2);
+
         final SecurityConfig securityConfig;
-        try {
-            securityConfig = new SecurityConfig(16, 128, 10, 20, 2);
+        try { securityConfig = builder.build();
         } catch (NoSuchAlgorithmException e) {
             Assertions.fail("Missing default hash algorithm", e);
             throw new IllegalStateException();
