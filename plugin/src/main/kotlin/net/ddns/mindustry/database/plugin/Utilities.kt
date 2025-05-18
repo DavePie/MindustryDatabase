@@ -15,10 +15,14 @@ fun newDatabase(): Database? {
     val securityConfig: SecurityConfig
 
     try {
-        securityConfig = SecurityConfig(
-            "SHA-256", 32, 255, 10,
-            69000, 8
-        )
+        val securityConfigBuilder = SecurityConfig.Builder.create()
+            .saltLength(16)
+            .hashLength(128)
+            .argon2Iteration(10)
+            .argon2Memory(20)
+            .argon2Parallelism(2)
+
+        securityConfig = securityConfigBuilder.build()
     } catch (e: NoSuchAlgorithmException) {
         throw RuntimeException(e)
     }

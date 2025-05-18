@@ -38,6 +38,7 @@ dependencies{
 
     implementation libs.jooq
     implementation libs.jooqExt
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.1.10"
 }
 
 jar{
