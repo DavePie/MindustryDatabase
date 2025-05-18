@@ -17,7 +17,7 @@ import static net.ddns.mindustry.database.schema.Tables.*;
 @NullMarked
 public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
 
-    private static Inet inet(String ip) throws IllegalArgumentException {
+    static Inet inet(String ip) throws IllegalArgumentException {
         Objects.requireNonNull(ip);
         try { return Inet.inet(InetAddress.getByName(ip));
         } catch (UnknownHostException e) {
@@ -32,6 +32,15 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
                 .fetchOptionalInto(Server.class);
     }
 
+    Optional<Server> find(DSLContext tDsl, Inet ip, int port) {
+        Objects.requireNonNull(tDsl);
+        Objects.requireNonNull(ip);
+        return dsl.select()
+                .from(SERVER)
+                .where(SERVER.IP_ADDRESS.eq(ip).and(SERVER.PORT.eq(port)))
+                .fetchOptionalInto(Server.class);
+    }
+
     @Override
     public Optional<Server> find(int id) {
         return find(dsl, id);
@@ -40,31 +49,24 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
     @Override
     public Optional<Server> find(String ip, int port) {
         final Inet inet = inet(ip);
-        return dsl.selectFrom(SERVER)
-                .where(SERVER.IP_ADDRESS.eq(inet).and(SERVER.PORT.eq(port)))
-                .fetchOptionalInto(Server.class);
+        return find(dsl, inet, port);
     }
 
     @Override
-    public List<Server> getAll() {
+    public List<Server> listAll() {
         return dsl.selectFrom(SERVER)
                 .fetchInto(Server.class);
     }
 
     @Override
-    public void add(String ip, int port, String name) {
-
-        if (find(ip, port).isPresent()) {
-            return;
-        }
-
+    public boolean add(String ip, int port, String name) {
         final Inet inet = inet(ip);
-
-        dsl.insertInto(SERVER)
+        return dsl.insertInto(SERVER)
                 .set(SERVER.IP_ADDRESS, inet)
                 .set(SERVER.PORT, port)
                 .set(SERVER.NAME, name)
-                .execute();
+                .onConflictDoNothing()
+                .execute() == 1; // 1 row if the server has been added, 0 if already present.
     }
 
     @Override
@@ -90,7 +92,6 @@ public record ServerQueriesImpl(DSLContext dsl) implements ServerQueries {
     @Override
     public void remove(Server server) {
         Objects.requireNonNull(server);
-
         dsl.deleteFrom(SERVER)
                 .where(SERVER.ID.eq(server.id()))
                 .execute();

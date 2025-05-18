@@ -68,7 +68,7 @@ private fun deregisterServer(args: Array<String>) {
 }
 
 private fun listServers(args: Array<String>) { // args is required
-    val results = database!!.server().all
+    val results = database!!.server().listAll()
     val output = arrayOfNulls<String>(results.size)
 
     for (i in results.indices) {

@@ -24,15 +24,16 @@ public interface ServerQueries {
      */
     Optional<Server> find(String ip, int port);
 
-    List<Server> getAll();
+    List<Server> listAll();
 
     /**
      * Adds a server entry to the database.
      * @param ip The IP of the server.
      * @param port The port of the server.
      * @param name The name of the server.
+     * @return true if the server has been added, false if the server with these parameters is already present.
      */
-    void add(String ip, int port, String name);
+    boolean add(String ip, int port, String name);
 
     /**
      * Updates a server's entry.
