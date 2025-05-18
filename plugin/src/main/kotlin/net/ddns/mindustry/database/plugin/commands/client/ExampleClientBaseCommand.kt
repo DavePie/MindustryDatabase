@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import mindustry.gen.Player
 
 @Deprecated("This is not intended for production usage..")
-class ExampleClientCommand(handler: CommandHandler) : ClientCommand(handler) {
+class ExampleClientBaseCommand(handler: CommandHandler) : BaseClientCommand(handler) {
     companion object {
         init {
             description = "Lorem ipsum."

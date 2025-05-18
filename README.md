@@ -29,6 +29,7 @@ command.
 - `url` - The URL of the database.
 - `user` - The database user to authenticate as.
 - `password` - The password of the database user.
+- `account-limit` - The maximum number of accounts that an individual player can create. Defaults to 5 accounts.
 - `session-duration` - The maximum duration of a player session. Defaults to 12 hours. If the session exceeds the
 maximum duration, then the user's session will become invalid when the user joins.
 

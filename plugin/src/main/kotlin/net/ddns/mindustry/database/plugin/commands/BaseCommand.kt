@@ -1,9 +1,8 @@
-package net.ddns.mindustry.database.plugin.commands.client
+package net.ddns.mindustry.database.plugin.commands
 
 import arc.util.CommandHandler
-import mindustry.gen.Player
 
-abstract class ClientCommand(handler: CommandHandler) {
+abstract class BaseCommand(handler: CommandHandler) {
     companion object {
         var description: String = ""
         var parameters: String = ""
@@ -25,7 +24,7 @@ abstract class ClientCommand(handler: CommandHandler) {
      * @param toKebab The string to turn into a kebab. **Must** be a camelCase or PascalCase string for the function to
      * work as expected.
      */
-    private fun kebab(toKebab: String): String {
+    fun kebab(toKebab: String): String {
         var kebabString = ""
 
         for (character in toKebab) {
@@ -40,5 +39,5 @@ abstract class ClientCommand(handler: CommandHandler) {
         return kebabString
     }
 
-    abstract fun runner(arguments: Array<String>, player: Player)
+    abstract fun runner(arguments: Array<String>)
 }

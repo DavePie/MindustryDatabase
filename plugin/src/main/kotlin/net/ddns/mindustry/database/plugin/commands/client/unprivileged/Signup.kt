@@ -54,7 +54,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToDisplayName.remove(player)
 
         val signupStatus = database!!.auth().signup(username!!, text.toCharArray(), player.ip(), player.uuid(),
-            Duration.ofSeconds(configSessionDuration.num().toLong()), configAccountLimit.num())
+            Duration.ofHours(configSessionDuration.num().toLong()), configAccountLimit.num())
 
         when (signupStatus) {
             is UsernameInUse -> {

@@ -5,15 +5,15 @@ import arc.util.Log
 import mindustry.mod.Plugin
 import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.plugin.commands.client.unprivileged.UnprivilegedClientCommand
-import net.ddns.mindustry.database.plugin.commands.loadServerCommands
+import net.ddns.mindustry.database.plugin.commands.server.BaseServerCommand
 import java.util.logging.LogManager
-import kotlin.reflect.full.primaryConstructor
 
 @Suppress("unused")
 class Main : Plugin() {
     companion object {
         var database: Database? = null
         var unprivilegedClientCommands = UnprivilegedClientCommand::class.sealedSubclasses
+        var serverCommands = BaseServerCommand::class.sealedSubclasses
     }
 
     override fun init() {
@@ -31,12 +31,10 @@ class Main : Plugin() {
     }
 
     override fun registerClientCommands(handler: CommandHandler?) {
-        for (command in unprivilegedClientCommands) {
-            command.primaryConstructor!!.call(handler!!)
-        }
+        registerCommands(unprivilegedClientCommands, handler!!)
     }
 
     override fun registerServerCommands(handler: CommandHandler?) {
-        loadServerCommands(handler!!)
+        registerCommands(serverCommands, handler!!)
     }
 }
