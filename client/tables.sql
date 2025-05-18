@@ -119,7 +119,6 @@ CREATE TABLE IF NOT EXISTS ban(
     issuer_id       INT         NOT NULL,
     server_id       INT         NOT NULL,
     reason          TEXT        NOT NULL,
-    handled         BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
     creation_date   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- Null for bans that are permanent.
     expiration_date TIMESTAMPTZ NULL DEFAULT NULL,
@@ -150,7 +149,6 @@ CREATE TABLE IF NOT EXISTS kick(
     issuer_id     INT         NOT NULL,
     server_id     INT         NOT NULL,
     reason        TEXT        NOT NULL,
-    handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_kick_user   FOREIGN KEY(account_id) REFERENCES account(id),
@@ -165,7 +163,7 @@ CREATE TABLE IF NOT EXISTS warn(
     issuer_id     INT         NOT NULL,
     server_id     INT         NOT NULL,
     reason        TEXT        NOT NULL,
-    handled       BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be handled by the server, true if it has been handled.
+    seen          BOOLEAN     NOT NULL DEFAULT FALSE, -- False if it needs to be shown to the user.
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_warn_user   FOREIGN KEY(account_id) REFERENCES account(id),

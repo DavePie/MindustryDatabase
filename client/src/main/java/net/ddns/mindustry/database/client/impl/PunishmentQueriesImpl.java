@@ -131,6 +131,50 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
     }
 
     @Override
+    public Optional<Ban> latestBan() {
+        return dsl.select()
+                .from(BAN)
+                .orderBy(BAN.CREATION_DATE.desc())
+                .limit(1)
+                .fetchOptionalInto(Ban.class);
+    }
+
+    @Override
+    public Optional<Mute> latestMute() {
+        return dsl.select()
+                .from(MUTE)
+                .orderBy(MUTE.CREATION_DATE.desc())
+                .limit(1)
+                .fetchOptionalInto(Mute.class);
+    }
+
+    @Override
+    public Optional<Warn> latestUnseenWarn() {
+        return dsl.select()
+                .from(WARN)
+                .where(WARN.SEEN.eq(false))
+                .orderBy(WARN.CREATION_DATE.desc())
+                .limit(1)
+                .fetchOptionalInto(Warn.class);
+    }
+
+    @Override
+    public List<Warn> unseenWarns() {
+        return dsl.select()
+                .from(WARN)
+                .where(WARN.SEEN.eq(false))
+                .fetchInto(Warn.class);
+    }
+
+    @Override
+    public void markWarnSeen(Warn warn) {
+        dsl.update(WARN)
+                .set(WARN.SEEN, true)
+                .where(WARN.ID.eq(warn.id()))
+                .execute();
+    }
+
+    @Override
     public List<Ban> activeBans(Account account) {
         final var now = OffsetDateTime.now();
         return dsl.select()

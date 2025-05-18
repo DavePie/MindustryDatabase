@@ -13,11 +13,15 @@ public interface PunishmentQueries {
 
     Optional<Issuer> findIssuer(int id);
 
-    // TODO Retrieve only the latest ban.
+    Optional<Ban> latestBan();
 
-    // TODO Retrieve latest mute.
+    Optional<Mute> latestMute();
 
-    // TODO Retrieve unseen warns.
+    Optional<Warn> latestUnseenWarn();
+
+    List<Warn> unseenWarns();
+
+    void markWarnSeen(Warn warn);
 
     List<Ban> activeBans(Account account);
 
