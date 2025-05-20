@@ -6,6 +6,10 @@ import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.client.SecurityConfig
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.commands.BaseCommand
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configURL
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUser
+import net.ddns.mindustry.database.plugin.configs.ReloadableConfig.Configs.reloadConfigs
 import java.security.NoSuchAlgorithmException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
@@ -50,6 +54,7 @@ fun newDatabase(): Database? {
  * plugin initialization.
  */
 fun restartConfigDependentFeatures() {
+    reloadConfigs()
     database = newDatabase()
 
     if (database == null) {

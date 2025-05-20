@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import mindustry.net.Administration
 import net.ddns.mindustry.database.plugin.Main.Companion.database
-import net.ddns.mindustry.database.plugin.configServerIP
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
 class RegisterServer(handler: CommandHandler) : BaseServerCommand(handler) {

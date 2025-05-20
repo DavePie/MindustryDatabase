@@ -2,7 +2,7 @@ package net.ddns.mindustry.database.plugin.commands.server
 
 import arc.util.CommandHandler
 import arc.util.Log
-import net.ddns.mindustry.database.plugin.configPassword
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
 class RemovePassword(handler: CommandHandler) : BaseServerCommand(handler) {

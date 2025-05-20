@@ -7,7 +7,7 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import net.ddns.mindustry.database.client.AccountQueries.LoginStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
-import net.ddns.mindustry.database.plugin.configSessionDuration
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSessionDuration
 import java.time.Duration
 
 class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
@@ -56,7 +56,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
 
         val loginResult = database!!.auth().login(
             username!!, text.toCharArray(), player.ip(),
-            player.uuid(), Duration.ofHours(configSessionDuration.num().toLong())
+            player.uuid(), Duration.ofHours(configSessionDuration.string().toLong())
         )
 
         when (loginResult) {
