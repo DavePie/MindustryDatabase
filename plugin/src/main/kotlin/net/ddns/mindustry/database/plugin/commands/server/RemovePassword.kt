@@ -5,7 +5,7 @@ import arc.util.Log
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class RemovePassword(handler: CommandHandler) : BaseServerCommand(handler) {
+class RemovePassword(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Removes the entry for the password configuration."

@@ -7,7 +7,7 @@ import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class RegisterServer(handler: CommandHandler) : BaseServerCommand(handler) {
+class RegisterServer(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Registers the server into the database."

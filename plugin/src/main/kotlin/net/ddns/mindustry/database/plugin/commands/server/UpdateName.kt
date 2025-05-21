@@ -7,7 +7,7 @@ import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 
-class UpdateName(handler: CommandHandler) : BaseServerCommand(handler) {
+class UpdateName(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Updates the name of the server. This does not affect the name configuration."

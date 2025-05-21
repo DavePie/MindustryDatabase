@@ -8,7 +8,7 @@ import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class UpdateIp(handler: CommandHandler) : BaseServerCommand(handler) {
+class UpdateIp(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Updates the server's IP in the database."

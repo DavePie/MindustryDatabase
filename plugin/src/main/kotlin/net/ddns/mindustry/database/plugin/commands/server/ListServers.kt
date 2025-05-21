@@ -3,7 +3,7 @@ package net.ddns.mindustry.database.plugin.commands.server
 import arc.util.CommandHandler
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 
-class ListServers(handler: CommandHandler) : BaseServerCommand(handler) {
+class ListServers(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Lists all servers in the database."

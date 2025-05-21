@@ -8,7 +8,7 @@ import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class DeregisterServer(handler: CommandHandler) : BaseServerCommand(handler) {
+class DeregisterServer(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Deregisters the server from the database."

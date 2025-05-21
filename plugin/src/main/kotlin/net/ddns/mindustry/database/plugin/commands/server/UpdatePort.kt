@@ -8,7 +8,7 @@ import net.ddns.mindustry.database.plugin.SERVER_IP_PORT_ERROR
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class UpdatePort(handler: CommandHandler) : BaseServerCommand(handler) {
+class UpdatePort(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Updates the port of the server. You may need to restart the server for the changes to " +

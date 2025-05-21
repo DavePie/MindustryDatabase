@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
-class ReloadConfigurations(handler: CommandHandler) : BaseServerCommand(handler) {
+class ReloadConfigurations(handler: CommandHandler) : ServerCommand(handler) {
     companion object {
         init {
             description = "Reloads any configuration dependent features."
