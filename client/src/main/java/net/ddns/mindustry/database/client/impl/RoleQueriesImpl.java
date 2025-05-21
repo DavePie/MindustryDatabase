@@ -70,8 +70,16 @@ public record RoleQueriesImpl(DSLContext dsl) implements RoleQueries {
     }
 
     @Override
+    public Optional<Role> findRole(Integer id) {
+        Objects.requireNonNull(id);
+        return dsl().selectFrom(Tables.ROLE)
+                .where(Tables.ROLE.ID.eq(id))
+                .fetchOptionalInto(Role.class);
+    }
+
+    @Override
     public List<Role> listRoles() {
-        return dsl.selectFrom(Tables.ROLE)
+        return dsl().selectFrom(Tables.ROLE)
                 .fetchInto(Role.class);
     }
 

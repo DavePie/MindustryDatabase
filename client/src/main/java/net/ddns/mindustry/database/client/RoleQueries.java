@@ -43,6 +43,8 @@ public interface RoleQueries {
     /// @return the role found having the name provided, if not found, an empty optional is returned.
     Optional<Role> findRole(String name);
 
+    Optional<Role> findRole(Integer id);
+
     /// Lists all the roles in the database.
     /// @return an ArrayList representing all the roles in the database.
     List<Role> listRoles();
