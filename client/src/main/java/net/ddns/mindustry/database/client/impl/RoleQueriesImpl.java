@@ -84,6 +84,17 @@ public record RoleQueriesImpl(DSLContext dsl) implements RoleQueries {
     }
 
     @Override
+    public List<Role> listRoles(Integer accountID) {
+        return dsl().selectFrom(Tables.ROLE)
+                .where(Tables.ROLE.ID.in(
+                        dsl().select(Tables.ACCOUNT_ROLE.ROLE_ID)
+                                .from(Tables.ACCOUNT_ROLE)
+                                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(accountID))
+                ))
+                .fetchInto(Role.class);
+    }
+
+    @Override
     public Optional<Permission> findPermission(String permission) {
         Objects.requireNonNull(permission);
         return dsl().selectFrom(Tables.PERMISSION)

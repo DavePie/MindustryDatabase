@@ -46,8 +46,12 @@ public interface RoleQueries {
     Optional<Role> findRole(Integer id);
 
     /// Lists all the roles in the database.
-    /// @return an ArrayList representing all the roles in the database.
+    /// @return a List representing all the roles in the database.
     List<Role> listRoles();
+
+    /// Lists all the roles that a given player has.
+    /// @return A List representing all the roles that the player has.
+    List<Role> listRoles(Integer accountID);
 
     /// Searches the permission via its property.
     /// @param permission the property of the permission to search.
