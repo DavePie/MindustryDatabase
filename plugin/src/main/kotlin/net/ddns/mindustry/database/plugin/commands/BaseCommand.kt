@@ -27,8 +27,8 @@ abstract class BaseCommand(handler: CommandHandler) {
     fun kebab(toKebab: String): String {
         var kebabString = ""
 
-        for (character in toKebab) {
-            if (character.isUpperCase() && character != toKebab.first()) {
+        for ((index, character) in toKebab.withIndex()) {
+            if (character.isUpperCase() && index != 0) {
                 kebabString += String.format("-%c", character.lowercaseChar())
                 continue
             }
