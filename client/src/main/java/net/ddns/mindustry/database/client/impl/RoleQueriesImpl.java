@@ -7,6 +7,8 @@ import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -65,6 +67,12 @@ public record RoleQueriesImpl(DSLContext dsl) implements RoleQueries {
         return dsl().selectFrom(Tables.ROLE)
                 .where(Tables.ROLE.NAME.eq(name))
                 .fetchOptionalInto(Role.class);
+    }
+
+    @Override
+    public List<Role> listRoles() {
+        return dsl.selectFrom(Tables.ROLE)
+                .fetchInto(Role.class);
     }
 
     @Override

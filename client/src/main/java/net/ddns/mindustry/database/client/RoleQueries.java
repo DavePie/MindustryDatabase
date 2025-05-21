@@ -4,6 +4,8 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.List;
 import java.util.Optional;
 
 @NullMarked
@@ -40,6 +42,10 @@ public interface RoleQueries {
     /// @param name the name of the role to search.
     /// @return the role found having the name provided, if not found, an empty optional is returned.
     Optional<Role> findRole(String name);
+
+    /// Lists all the roles in the database.
+    /// @return an ArrayList representing all the roles in the database.
+    List<Role> listRoles();
 
     /// Searches the permission via its property.
     /// @param permission the property of the permission to search.
