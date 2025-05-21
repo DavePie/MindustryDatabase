@@ -56,7 +56,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
 
         val loginResult = database!!.auth().login(
             username!!, text.toCharArray(), player.ip(),
-            player.uuid(), Duration.ofHours(configSessionDuration.string().toLong())
+            player.uuid(), Duration.ofHours(configSessionDuration.num().toLong())
         )
 
         when (loginResult) {
