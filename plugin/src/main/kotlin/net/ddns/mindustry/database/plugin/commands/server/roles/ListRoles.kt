@@ -29,7 +29,7 @@ class ListRoles(handler: CommandHandler) : RoleCommand(handler) {
             Log.err("Couldn't find an account by that name.")
         }
 
-        val accountRoles = database!!.role().listRoles(account.get().id)
+        val accountRoles = database!!.role().accountRoles(account.get())
         logRoles(accountRoles)
     }
 

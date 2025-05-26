@@ -7,7 +7,6 @@ import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -84,13 +83,12 @@ public record RoleQueriesImpl(DSLContext dsl) implements RoleQueries {
     }
 
     @Override
-    public List<Role> listRoles(Integer accountID) {
-        return dsl().selectFrom(Tables.ROLE)
-                .where(Tables.ROLE.ID.in(
-                        dsl().select(Tables.ACCOUNT_ROLE.ROLE_ID)
-                                .from(Tables.ACCOUNT_ROLE)
-                                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(accountID))
-                ))
+    public List<Role> accountRoles(Account account) {
+        Objects.requireNonNull(account);
+        return dsl().select()
+                .from(Tables.ACCOUNT_ROLE)
+                .innerJoin(Tables.ROLE).on(Tables.ROLE.ID.eq(Tables.ACCOUNT_ROLE.ROLE_ID))
+                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id()))
                 .fetchInto(Role.class);
     }
 

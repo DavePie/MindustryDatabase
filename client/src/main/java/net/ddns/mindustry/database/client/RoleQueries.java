@@ -4,7 +4,6 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jspecify.annotations.NullMarked;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -49,9 +48,8 @@ public interface RoleQueries {
     /// @return a List representing all the roles in the database.
     List<Role> listRoles();
 
-    /// Lists all the roles that a given player has.
-    /// @return A List representing all the roles that the player has.
-    List<Role> listRoles(Integer accountID);
+    /// @return a list of all the roles the given account has.
+    List<Role> accountRoles(Account account);
 
     /// Searches the permission via its property.
     /// @param permission the property of the permission to search.
