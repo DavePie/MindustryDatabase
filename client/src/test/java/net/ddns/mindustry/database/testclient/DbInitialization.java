@@ -44,21 +44,28 @@ public final class DbInitialization {
         }
     }
 
-    public static Database prepareDatabase() {
+    public static void clearDatabase() {
+        final Properties dbConfig = dbConfig();
+        final var url  = dbConfig.getProperty("url");
+        final var user = dbConfig.getProperty("user");
+        final var pass = dbConfig.getProperty("password");
+        clearDatabase(url, user, pass);
+    }
+
+    public static Database newConnection(int accountLimit) {
 
         final Properties dbConfig = dbConfig();
         final var url  = dbConfig.getProperty("url");
         final var user = dbConfig.getProperty("user");
         final var pass = dbConfig.getProperty("password");
 
-        clearDatabase(url, user, pass);
-
         final var builder = SecurityConfig.Builder.create()
                 .saltLength(16)
                 .hashLength(128)
                 .argon2Iteration(10)
                 .argon2Memory(20)
-                .argon2Parallelism(2);
+                .argon2Parallelism(2)
+                .accountLimit(accountLimit);
 
         final SecurityConfig securityConfig;
         try { securityConfig = builder.build();
@@ -67,6 +74,11 @@ public final class DbInitialization {
             throw new IllegalStateException();
         }
         return Database.newConnection(url, user, pass, securityConfig);
+    }
+
+    public static Database clearAndConnect(int accountLimit) {
+        clearDatabase();
+        return newConnection(accountLimit);
     }
 
     private DbInitialization() {}

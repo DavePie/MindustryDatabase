@@ -9,12 +9,19 @@ import java.util.Objects;
 
 /// Class containing the hash configuration for sessions and passwords.
 @NullMarked
-public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int argon2Iteration, int argon2Memory, int argon2Parallelism, int minimumPasswordLength) {
+public record SecurityConfig(MessageDigest sessionDigest,
+                             Argon2 argon2,
+                             int argon2Iteration,
+                             int argon2Memory,
+                             int argon2Parallelism,
+                             int minimumPasswordLength,
+                             int accountLimit) {
 
     public SecurityConfig {
         Objects.requireNonNull(sessionDigest);
         Objects.requireNonNull(argon2);
         if (minimumPasswordLength <= 0) throw new IllegalArgumentException("The minimum password length cannot be 0 or negative.");
+        if (accountLimit <= 0) throw new IllegalArgumentException("The account limit cannot be 0 or negative.");
     }
 
     public SecurityConfig(String sessionAlgorithm,
@@ -23,14 +30,16 @@ public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int arg
                           int argon2Iteration,
                           int argon2Memory,
                           int argon2Parallelism,
-                          int minimumPasswordLength) throws NoSuchAlgorithmException {
+                          int minimumPasswordLength,
+                          int accountsLimit) throws NoSuchAlgorithmException {
         this(MessageDigest.getInstance(Objects.requireNonNull(sessionAlgorithm)),
                 // ARGON2id by default.
                 Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, saltLength, hashLength),
                 argon2Iteration,
                 argon2Memory,
                 argon2Parallelism,
-                minimumPasswordLength);
+                minimumPasswordLength,
+                accountsLimit);
     }
 
     public String hashPass(char[] password) {
@@ -46,6 +55,7 @@ public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int arg
         private int argon2Memory;
         private int argon2Parallelism;
         private int minimumPasswordLength = 5;
+        private int accountLimit = 5;
 
         private Builder() {}
 
@@ -88,6 +98,12 @@ public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int arg
             return this;
         }
 
+        /// @param limit the number of accounts allowed for a single user, the recommended amount is 5.
+        public Builder accountLimit(int limit) {
+            this.accountLimit = limit;
+            return this;
+        }
+
         public SecurityConfig build() throws NoSuchAlgorithmException {
             return new SecurityConfig(sessionAlgorithm,
                     saltLength,
@@ -95,7 +111,8 @@ public record SecurityConfig(MessageDigest sessionDigest, Argon2 argon2, int arg
                     argon2Iteration,
                     argon2Memory,
                     argon2Parallelism,
-                    minimumPasswordLength);
+                    minimumPasswordLength,
+                    accountLimit);
         }
     }
 }

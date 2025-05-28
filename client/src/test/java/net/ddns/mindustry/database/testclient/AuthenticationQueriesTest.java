@@ -1,11 +1,17 @@
 package net.ddns.mindustry.database.testclient;
 
 import net.ddns.mindustry.database.client.AccountQueries;
+import net.ddns.mindustry.database.client.AccountQueries.*;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import org.junit.jupiter.api.*;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import static net.ddns.mindustry.database.client.AccountQueries.SignupStatus.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public final class AuthenticationQueriesTest {
@@ -14,7 +20,7 @@ public final class AuthenticationQueriesTest {
 
     @BeforeAll
     static void initialize() {
-        db = DbInitialization.prepareDatabase();
+        db = DbInitialization.clearAndConnect(2);
     }
 
     @AfterAll
@@ -27,14 +33,11 @@ public final class AuthenticationQueriesTest {
     void signup() {
 
         final var mock = MockAccount.instance();
-        final AccountQueries.SignupStatus status = db.auth()
-                .signup(mock.username(), mock.password(), mock.ip(), mock.uuid(), Duration.ofHours(1), 2);
+        final AccountQueries.SignupStatus status = db.auth().signup(
+                mock.username(), mock.password(),
+                mock.ip(), mock.uuid(), Duration.ofHours(1));
 
-        if (!(status instanceof AccountQueries.SignupStatus.Created(var account))) {
-            Assertions.fail("The account did not get created: " + status);
-            return;
-        }
-        Assertions.assertNotNull(account);
+        assertInstanceOf(Created.class, status, "The account did not get created: " + status);
     }
 
     @Test
@@ -42,10 +45,7 @@ public final class AuthenticationQueriesTest {
     void logout() {
         final var mock = MockAccount.instance();
         final Account account = db.auth().find(mock.username()).orElse(null);
-        if (account == null) {
-            Assertions.fail("The account is not available");
-            return;
-        }
+        assertNotNull(account, "The account is not available.");
         db.auth().logout(account);
     }
 
@@ -57,39 +57,75 @@ public final class AuthenticationQueriesTest {
         final AccountQueries.LoginStatus login = db.auth()
                 .login(mock.username(), mock.password(), mock.ip(), mock.uuid(), Duration.ofHours(1));
 
-        if (!(login instanceof AccountQueries.LoginStatus.LoggedIn(var account))) {
-            Assertions.fail("Could not login into the account: " + login);
-            return;
-        }
-        Assertions.assertNotNull(account);
+        assertInstanceOf(LoginStatus.LoggedIn.class, login, "Could not login into the account: " + login);
     }
 
     @Test
     void signupLimit() {
 
         final var mock = MockAccount.instance();
-        final int accountLimit = 2;
+        final int accountLimit = db.securityConfig().accountLimit();
         final String ip = "10.10.40.3";
 
         for (int i = 0; i < (accountLimit + 1); i++) {
 
-            final AccountQueries.SignupStatus status = db.auth()
-                    .signup(mock.username() + "_" + i, mock.password(), ip, mock.uuid(), Duration.ofHours(1), accountLimit);
+            final AccountQueries.SignupStatus status = db.auth().signup(
+                    mock.username() + "_" + i,
+                    mock.password(), ip, mock.uuid(), Duration.ofHours(1));
 
             if (i == accountLimit) {
-                if (!(status instanceof AccountQueries.SignupStatus.LimitReached(int limit))) {
-                    Assertions.fail("The account limit was not respected. " + status);
-                    continue;
-                }
-                Assertions.assertEquals(accountLimit, limit);
+                assertInstanceOf(LimitReached.class, status, "The account limit was not respected. " + status);
+                assertEquals(accountLimit, ((LimitReached) status).limit());
                 continue;
             }
-
-            if (!(status instanceof AccountQueries.SignupStatus.Created(var account))) {
-                Assertions.fail("The account did not get created: " + status);
-                continue;
-            }
-            Assertions.assertNotNull(account);
+            assertInstanceOf(Created.class, status, "The account did not get created: " + status);
         }
+    }
+
+    @Test
+    void findAccountsByIp() {
+
+        final String ip = "12.0.0.";
+        final var mock = MockAccount.instance();
+        // I do this because the password is cleared and deleted.
+        final Supplier<char[]> password = () -> Arrays.copyOf(mock.password(), mock.password().length);
+        final Duration session = Duration.ofHours(1);
+
+        // I create the test accounts.
+        final Account[] accounts = new Account[7];
+        // Custom DB instance to overwrite and increase the account limit.
+        try (var db = DbInitialization.newConnection(100)) {
+            for (int i = 0; i < 7; i++) {
+                final Account account = ((Created) db.auth().signup(
+                        "limit_check_" + i, password.get(),
+                        ip + i,
+                        mock.uuid(), session)).account();
+                db.auth().logout(account);
+                accounts[i] = account;
+            }
+        }
+        // The last 3 accounts are innocent, those will be used to verify if unlinked accounts are also retrieved.
+        /*
+        account 0: 127.0.0.0, 127.0.0.1
+        account 1: 127.0.0.1, 127.0.0.3
+        account 2: 127.0.0.2, 127.0.0.0
+        account 3: 127.0.0.3
+         */
+        // I connect account 0 with account 1 via address 127.0.0.1
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[0].username(), password.get(), ip + "1", mock.uuid(), session));
+        // I connect account 2 with account 0 via address 127.0.0.2
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[2].username(), password.get(), ip + "0", mock.uuid(), session));
+        // I connect account 1 with account 3 via address 127.0.0.3
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[1].username(), password.get(), ip + "3", mock.uuid(), session));
+        // I don't check the account directly since the equality is done over object identity, which is different.
+        final var tracked = db.auth().findAccounts(ip + "3")
+                .stream()
+                .map(Account::id)
+                .collect(Collectors.toUnmodifiableSet());
+        assertEquals(4, tracked.size());
+        assertTrue(tracked.contains(accounts[0].id()));
+        assertTrue(tracked.contains(accounts[1].id()));
+        assertTrue(tracked.contains(accounts[2].id()));
+        assertTrue(tracked.contains(accounts[3].id()));
     }
 }

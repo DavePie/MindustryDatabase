@@ -4,7 +4,7 @@ import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.SecurityConfig;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-import org.jooq.DSLContext;
+import org.jooq.*;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.postgres.extensions.types.Inet;
@@ -12,9 +12,9 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
@@ -65,13 +65,56 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .execute();
     }
 
-    private int countAccounts(DSLContext tDsl, Inet userIp) {
-        // TODO Check if this is enough. maybe when an user uses the same ip to authenticates with different accounts.
-        return tDsl.select(DSL.countDistinct(LOGIN.ACCOUNT_ID))
+    private <T> T trackAccountsFromInet(DSLContext tDsl, Inet ip, BiFunction<Table<?>, WithStep, T> query) {
+
+        Objects.requireNonNull(tDsl);
+        Objects.requireNonNull(ip);
+        Objects.requireNonNull(query);
+
+        // I create the cte table that will hold the recursive data.
+        final var cteTable = DSL.name("account_tree")
+                .fields(LOGIN.ACCOUNT_ID.getName(), LOGIN.IP_ADDRESS.getName())
+                .as(tDsl.select(LOGIN.ACCOUNT_ID, LOGIN.IP_ADDRESS));
+        // Commodity fields of the cte table, used for joins.
+        final var cteAccount = Objects.requireNonNull(cteTable.field(LOGIN.ACCOUNT_ID));
+        final var cteAddress = Objects.requireNonNull(cteTable.field(LOGIN.IP_ADDRESS));
+
+        // The base query that selects the first batch of data used for the recursion.
+        // The data will be retrieved by using the ip address provided.
+        final var baseQuery = tDsl.select(LOGIN.ACCOUNT_ID, LOGIN.IP_ADDRESS)
                 .from(LOGIN)
-                .where(LOGIN.IP_ADDRESS.eq(userIp))
-                .fetchOptionalInto(Integer.class)
-                .orElseThrow(() -> new IllegalStateException("Could not count the accounts."));
+                .where(LOGIN.IP_ADDRESS.eq(ip));
+        // The recursive query that will find account/ip links until no new record is found.
+        final var recursiveQuery = tDsl.select(LOGIN.ACCOUNT_ID, LOGIN.IP_ADDRESS)
+                .from(LOGIN)
+                .innerJoin(cteTable)
+                .on(LOGIN.ACCOUNT_ID.eq(cteAccount).or(LOGIN.IP_ADDRESS.eq(cteAddress)))
+                .where(LOGIN.ACCOUNT_ID.notEqual(cteAccount).or(LOGIN.IP_ADDRESS.notEqual(cteAddress)));
+        // I apply the recursive cte, then the function will select the wanted data.
+        return query.apply(cteTable, tDsl.withRecursive(cteTable.getName())
+                .as(baseQuery.union(recursiveQuery)));
+    }
+
+    private Set<Account> accountsFromIp(DSLContext tDsl, Inet ip) {
+        return trackAccountsFromInet(tDsl, ip, (cteTable, query) -> {
+            final var cteAccount = Objects.requireNonNull(cteTable.field(LOGIN.ACCOUNT_ID));
+            return query.select(ACCOUNT)
+                    .distinctOn(cteAccount)
+                    .from(cteTable)
+                    .innerJoin(ACCOUNT)
+                    .on(ACCOUNT.ID.eq(cteAccount))
+                    .fetchStreamInto(Account.class)
+                    .collect(Collectors.toSet());
+        });
+    }
+
+    private int countAccountsFromIp(DSLContext tDsl, Inet userIp) {
+        return trackAccountsFromInet(tDsl, userIp, (cteTable, query) -> {
+            final var cteAccount = Objects.requireNonNull(cteTable.field(LOGIN.ACCOUNT_ID));
+            return query.select(DSL.countDistinct(cteAccount))
+                    .from(cteTable)
+                    .fetchOneInto(Integer.class);
+        });
     }
 
     private LoginStatus login(DSLContext tDsl, String username, char[] password, Inet ip, byte[] session, Duration duration) {
@@ -104,7 +147,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         return new LoginStatus.LoggedIn(account);
     }
 
-    public SignupStatus signup(DSLContext tDsl, String username, byte[] password) {
+    private SignupStatus signup(DSLContext tDsl, String username, byte[] password) {
         return tDsl.insertInto(ACCOUNT)
                 .set(ACCOUNT.USERNAME, username)
                 .set(ACCOUNT.PASSWORD, password)
@@ -167,6 +210,12 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
+    public Set<Account> findAccounts(String ip) {
+        final Inet inet = inet(ip);
+        return dsl().transactionResult(ctx -> accountsFromIp(ctx.dsl(), inet));
+    }
+
+    @Override
     public LoginStatus login(String username, char[] password, String ip, String uuid, Duration sessionDuration) {
 
         Objects.requireNonNull(username);
@@ -191,7 +240,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration, int accountsLimit) {
+    public SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration) {
 
         if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidUsername(username);
         Objects.requireNonNull(password);
@@ -208,8 +257,8 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
             return dsl.transactionResult(ctx -> {
 
                 final DSLContext tDsl = ctx.dsl();
-                final int accounts = countAccounts(tDsl, inet);
-                if (accountsLimit <= accounts) return new SignupStatus.LimitReached(accountsLimit);
+                final int accounts = countAccountsFromIp(tDsl, inet);
+                if (security.accountLimit() <= accounts) return new SignupStatus.LimitReached(security().accountLimit());
 
                 final SignupStatus status = signup(tDsl, username, hashedPass);
                 if (status instanceof SignupStatus.Created(Account account)) {

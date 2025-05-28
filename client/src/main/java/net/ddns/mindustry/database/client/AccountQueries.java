@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 @NullMarked
 public interface AccountQueries {
@@ -21,6 +22,8 @@ public interface AccountQueries {
     /// Searches for an account using their IP and UUID. Requires the player to have a session.
     /// @return the account if found.
     Optional<Account> find(String ip, String uuid) throws DataAccessException;
+
+    Set<Account> findAccounts(String ip);
 
     /// Does a login attempt and if successful, creates a new session with the provided duration.
     /// @param username the username of the account.
@@ -38,9 +41,8 @@ public interface AccountQueries {
     /// @param ip the player address for internal checks.
     /// @param uuid the player uuid for internal checks.
     /// @param sessionDuration the duration of the session.
-    /// @param accountsLimit the number of accounts allowed for a single user, the recommended amount is 5.
     /// @apiNote the password will be wiped after calling this method.
-    SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration, int accountsLimit);
+    SignupStatus signup(String username, char[] password, String ip, String uuid, Duration sessionDuration);
 
     JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException;
 
