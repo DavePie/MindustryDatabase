@@ -56,15 +56,27 @@ CREATE TABLE IF NOT EXISTS account_session(
     CONSTRAINT chk_session_cookie_length CHECK (LENGTH(session_cookie) = 32)
 );
 
-CREATE TABLE IF NOT EXISTS server_join(
+CREATE TABLE IF NOT EXISTS online_account(
+
+    id SERIAL    PRIMARY KEY,
+    account_id   INT NOT NULL UNIQUE, -- the account can only play on one server at the time.
+    server_id    INT NOT NULL, -- the server the account is online on.
+    display_name VARCHAR(255) NOT NULL, -- the name the account is currently using.
+    join_date    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_online_account_account_id FOREIGN KEY(account_id) REFERENCES account(id),
+    CONSTRAINT fk_online_account_server_id  FOREIGN KEY(server_id)  REFERENCES account(id)
+);
+
+CREATE TABLE IF NOT EXISTS server_account_history(
 
     id           SERIAL       PRIMARY KEY,
     display_name VARCHAR(255) NOT NULL,
     account_id   INT          NOT NULL,
     server_id    INT          NOT NULL,
-    join_date    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
---  TODO Make account_id and leave_date unique to have a conflict ensuring a player will never be able to join multiple servers?
-    leave_date   TIMESTAMPTZ  NULL DEFAULT NULL,
+    join_date    TIMESTAMPTZ  NOT NULL,
+    leave_date   TIMESTAMPTZ  NOT NULL,
+
     CONSTRAINT fk_server_join_user   FOREIGN KEY(account_id) REFERENCES account(id),
     CONSTRAINT fk_server_join_server FOREIGN KEY(server_id)  REFERENCES server(id)
 );
@@ -192,6 +204,7 @@ CREATE TABLE IF NOT EXISTS mute(
     )
 );
 
+-- TODO Make this a generic appeal to cover mutes, bans and other things?
 CREATE TABLE IF NOT EXISTS ban_appeal(
 
     id            SERIAL      PRIMARY KEY,

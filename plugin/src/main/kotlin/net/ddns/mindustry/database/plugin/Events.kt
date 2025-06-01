@@ -57,8 +57,9 @@ private fun playerLeave(event: PlayerLeave) {
         Log.warn("A player left but they could not be found in the database. They may not have a session.")
         return
     }
-
-    database!!.auth().leavesServer(account.get())
+    val port = Administration.Config.port.num()
+    val server = database!!.server().find(configServerIP.string(), port)
+    database!!.auth().leavesServer(account.get(), server.get())
 }
 
 private fun gameOver(event: StateChangeEvent) {

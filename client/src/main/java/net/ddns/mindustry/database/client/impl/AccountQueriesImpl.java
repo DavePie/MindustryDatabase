@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.SecurityConfig;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.schema.tables.pojos.OnlineAccount;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.*;
 import org.jooq.exception.DataAccessException;
@@ -287,32 +288,49 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
             if (oAccountId.isEmpty()) return new JoinStatus.NotAuthenticated();
             final int accountId = oAccountId.orElseThrow();
 
-            // I check if the account is already inside a server.
-            if (tDsl.selectOne()
-                    .from(SERVER_JOIN)
-                    .where(SERVER_JOIN.ACCOUNT_ID.eq(accountId).and(SERVER_JOIN.LEAVE_DATE.isNull()))
-                    .fetchOptional()
-                    .isPresent()) return new JoinStatus.AlreadyInServer();
-
-            tDsl.insertInto(SERVER_JOIN)
-                    .set(SERVER_JOIN.DISPLAY_NAME, displayName)
-                    .set(SERVER_JOIN.ACCOUNT_ID, accountId)
-                    .set(SERVER_JOIN.SERVER_ID, server.id())
-                    .execute();
-
             // TODO Server authorization.
 
-            return new JoinStatus.Joined(find(tDsl, accountId).orElseThrow());
+            // I try to insert in the online list, if it collides, it means he is already playing.
+            final boolean inserted = tDsl.insertInto(ONLINE_ACCOUNT)
+                    .set(ONLINE_ACCOUNT.ACCOUNT_ID, accountId)
+                    .set(ONLINE_ACCOUNT.SERVER_ID, server.id())
+                    .set(ONLINE_ACCOUNT.DISPLAY_NAME, displayName)
+                    .onConflictDoNothing()
+                    .execute() == 1;
+            return inserted ?
+                    new JoinStatus.Joined(find(tDsl, accountId).orElseThrow()) :
+                    new JoinStatus.AlreadyInServer();
         });
     }
 
     @Override
-    public void leavesServer(Account account) throws DataAccessException {
+    public boolean leavesServer(Account account, Server server) throws DataAccessException {
+
         Objects.requireNonNull(account);
-        dsl.update(SERVER_JOIN)
-                .set(SERVER_JOIN.LEAVE_DATE, OffsetDateTime.now())
-                .where(SERVER_JOIN.ACCOUNT_ID.eq(account.id()).and(SERVER_JOIN.LEAVE_DATE.isNull()))
-                .execute();
+        Objects.requireNonNull(server);
+
+        return dsl.transactionResult(ctx -> {
+
+            final DSLContext tDsl = ctx.dsl();
+            // I remove the account from the online table.
+            final var online = tDsl.deleteFrom(ONLINE_ACCOUNT)
+                    .where(ONLINE_ACCOUNT.ACCOUNT_ID.eq(account.id()).and(ONLINE_ACCOUNT.SERVER_ID.eq(server.id())))
+                    .returningResult(ONLINE_ACCOUNT)
+                    .fetchOptionalInto(OnlineAccount.class)
+                    .orElse(null);
+            // In case the account provided was not online.
+            if (online == null) return false;
+
+            // I insert the player inside the server account history.
+            tDsl.insertInto(SERVER_ACCOUNT_HISTORY)
+                    .set(SERVER_ACCOUNT_HISTORY.DISPLAY_NAME, online.displayName())
+                    .set(SERVER_ACCOUNT_HISTORY.ACCOUNT_ID, online.accountId())
+                    .set(SERVER_ACCOUNT_HISTORY.SERVER_ID, online.serverId())
+                    .set(SERVER_ACCOUNT_HISTORY.JOIN_DATE, online.joinDate())
+                    .set(SERVER_ACCOUNT_HISTORY.LEAVE_DATE, OffsetDateTime.now())
+                    .execute();
+            return true;
+        });
     }
 
     @Override

@@ -46,7 +46,8 @@ public interface AccountQueries {
 
     JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException;
 
-    void leavesServer(Account account) throws DataAccessException;
+    /// @return false if the account is offline, otherwise true.
+    boolean leavesServer(Account account, Server server) throws DataAccessException;
 
     /// Updates the password of an account.
     /// @param newPassword The new password.
