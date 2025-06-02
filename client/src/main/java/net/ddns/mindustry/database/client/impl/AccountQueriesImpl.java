@@ -1,10 +1,7 @@
 package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.AccountQueries;
-import net.ddns.mindustry.database.client.SecurityConfig;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import net.ddns.mindustry.database.schema.tables.pojos.OnlineAccount;
-import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jooq.*;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -21,27 +18,7 @@ import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
-public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implements AccountQueries {
-
-    private byte[] createSessionHash(String ip, String uuid) {
-        Objects.requireNonNull(ip);
-        Objects.requireNonNull(uuid);
-        return security().sessionDigest().digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
-    }
-
-    /// @return the account id, if the session is present and not expired, or else, the empty optional.
-    private OptionalInt sessionAccountId(DSLContext tDsl, byte[] session) {
-        return tDsl.select(ACCOUNT_SESSION.ACCOUNT_ID, ACCOUNT_SESSION.EXPIRATION_DATE)
-                .from(ACCOUNT_SESSION)
-                .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(session))
-                .fetchStream()
-                .limit(1) // Always only one element.
-                .flatMapToInt(result -> {
-                    final OffsetDateTime expiration = result.get(ACCOUNT_SESSION.EXPIRATION_DATE);
-                    if (expiration.isBefore(OffsetDateTime.now())) return null; // The session expired.
-                    return IntStream.of(result.get(ACCOUNT_SESSION.ACCOUNT_ID));
-                }).findFirst();
-    }
+public record AccountQueriesImpl(DatabaseImpl database) implements AccountQueries {
 
     /// Adds a new Login entry and creates a new session if not present,
     /// else updates the previous one with the new information.
@@ -120,21 +97,23 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
     private LoginStatus login(DSLContext tDsl, String username, char[] password, Inet ip, byte[] session, Duration duration) {
 
+        final var security = database().securityConfig();
+
         // Computationally expensive hash.
         // I hash and update it on the database, because if the password is correct,
         // I want to update it using the latest security configuration.
         // This is not done outside the transaction because if a user is already authenticated, I want to be fast.
         // I also don't do it after the verifying to take the same amount of time in case the username is not valid.
-        final byte[] hashedPassword = security().hashPass(password).getBytes(StandardCharsets.UTF_8);
+        final byte[] hashedPassword = security.hashPass(password).getBytes(StandardCharsets.UTF_8);
 
         final Account account = find(tDsl, username).orElse(null);
         if (account == null) {
-            security().hashPass(password); // Wasteful operation to avoid username scanning.
+            security.hashPass(password); // Wasteful operation to avoid username scanning.
             return new LoginStatus.WrongCredentials();
         }
 
         final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
-        if (!security().argon2().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
+        if (!security.argon2().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
 
         tDsl.update(ACCOUNT)
                 // I update the password with the latest argon2 configuration.
@@ -161,6 +140,29 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
                 .map(status -> (SignupStatus) status)
                 // The row has not been added, meaning the query when on conflict, meaning the username already exists.
                 .orElseGet(() -> new SignupStatus.UsernameInUse(username));
+    }
+
+    public byte[] createSessionHash(String ip, String uuid) {
+        Objects.requireNonNull(ip);
+        Objects.requireNonNull(uuid);
+        return database()
+                .securityConfig()
+                .sessionDigest()
+                .digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /// @return the account id, if the session is present and not expired, or else, the empty optional.
+    public OptionalInt sessionAccountId(DSLContext tDsl, byte[] session) {
+        return tDsl.select(ACCOUNT_SESSION.ACCOUNT_ID, ACCOUNT_SESSION.EXPIRATION_DATE)
+                .from(ACCOUNT_SESSION)
+                .where(ACCOUNT_SESSION.SESSION_COOKIE.eq(session))
+                .fetchStream()
+                .limit(1) // Always only one element.
+                .flatMapToInt(result -> {
+                    final OffsetDateTime expiration = result.get(ACCOUNT_SESSION.EXPIRATION_DATE);
+                    if (expiration.isBefore(OffsetDateTime.now())) return null; // The session expired.
+                    return IntStream.of(result.get(ACCOUNT_SESSION.ACCOUNT_ID));
+                }).findFirst();
     }
 
     public Optional<Account> find(DSLContext tDsl, String username) {
@@ -194,7 +196,7 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
 
     @Override
     public Optional<Account> find(String username) {
-        return find(dsl, username);
+        return find(database().dsl(), username);
     }
 
     @Override
@@ -203,17 +205,20 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         Objects.requireNonNull(ip);
         Objects.requireNonNull(uuid);
 
-        return sessionAccountId(dsl, createSessionHash(ip, uuid))
-                .stream()
-                .mapToObj(accountId -> find(dsl, accountId).orElse(null))
-                .filter(Objects::nonNull)
-                .findFirst();
+        return database().dsl().transactionResult(ctx -> {
+            final DSLContext tDsl = ctx.dsl();
+            return sessionAccountId(tDsl, createSessionHash(ip, uuid))
+                    .stream()
+                    .mapToObj(accountId -> find(tDsl, accountId).orElse(null))
+                    .filter(Objects::nonNull)
+                    .findFirst();
+        });
     }
 
     @Override
     public Set<Account> findAccounts(String ip) {
         final Inet inet = inet(ip);
-        return dsl().transactionResult(ctx -> accountsFromIp(ctx.dsl(), inet));
+        return database().dsl().transactionResult(ctx -> accountsFromIp(ctx.dsl(), inet));
     }
 
     @Override
@@ -226,16 +231,19 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         try {
             final byte[] session = createSessionHash(ip, uuid);
             final Inet inet = inet(ip);
-            return dsl.transactionResult(ctx -> login(ctx.dsl(), username, password, inet, session, sessionDuration));
+            return database().dsl().transactionResult(ctx -> login(ctx.dsl(), username, password, inet, session, sessionDuration));
         } finally {
-            security().argon2().wipeArray(password);
+            database().securityConfig()
+                    .argon2()
+                    .wipeArray(password);
         }
     }
 
     @Override
     public void logout(Account account) {
         Objects.requireNonNull(account);
-        dsl.deleteFrom(ACCOUNT_SESSION)
+        database().dsl()
+                .deleteFrom(ACCOUNT_SESSION)
                 .where(ACCOUNT_SESSION.ACCOUNT_ID.eq(account.id()))
                 .execute();
     }
@@ -246,20 +254,23 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
         if (!isUsernameValid(Objects.requireNonNull(username))) return new SignupStatus.InvalidUsername(username);
         Objects.requireNonNull(password);
 
+        final var security = database().securityConfig();
         final Inet inet = inet(ip);
         final byte[] session = createSessionHash(ip, uuid);
         // I do this here to make the signup operation slow in every case.
-        final byte[] hashedPass = security.hashPass(password).getBytes(StandardCharsets.UTF_8);
+        final byte[] hashedPass = security
+                .hashPass(password)
+                .getBytes(StandardCharsets.UTF_8);
 
         // The password is too short.
-        if (password.length < security().minimumPasswordLength()) return new SignupStatus.InvalidPassword();
+        if (password.length < security.minimumPasswordLength()) return new SignupStatus.InvalidPassword();
 
         try {
-            return dsl.transactionResult(ctx -> {
+            return database().dsl().transactionResult(ctx -> {
 
                 final DSLContext tDsl = ctx.dsl();
                 final int accounts = countAccountsFromIp(tDsl, inet);
-                if (security.accountLimit() <= accounts) return new SignupStatus.LimitReached(security().accountLimit());
+                if (security.accountLimit() <= accounts) return new SignupStatus.LimitReached(security.accountLimit());
 
                 final SignupStatus status = signup(tDsl, username, hashedPass);
                 if (status instanceof SignupStatus.Created(Account account)) {
@@ -273,81 +284,24 @@ public record AccountQueriesImpl(DSLContext dsl, SecurityConfig security) implem
     }
 
     @Override
-    public JoinStatus joinsServer(Server server, String displayName, String ip, String uuid) throws DataAccessException {
-
-        Objects.requireNonNull(server);
-        Objects.requireNonNull(displayName);
-        final byte[] session = createSessionHash(ip, uuid);
-
-        return dsl.transactionResult(ctx -> {
-
-            final DSLContext tDsl = ctx.dsl();
-
-            // The session is not present or is expired.
-            final OptionalInt oAccountId = sessionAccountId(tDsl, session);
-            if (oAccountId.isEmpty()) return new JoinStatus.NotAuthenticated();
-            final int accountId = oAccountId.orElseThrow();
-
-            // TODO Server authorization.
-
-            // I try to insert in the online list, if it collides, it means he is already playing.
-            final boolean inserted = tDsl.insertInto(ONLINE_ACCOUNT)
-                    .set(ONLINE_ACCOUNT.ACCOUNT_ID, accountId)
-                    .set(ONLINE_ACCOUNT.SERVER_ID, server.id())
-                    .set(ONLINE_ACCOUNT.DISPLAY_NAME, displayName)
-                    .onConflictDoNothing()
-                    .execute() == 1;
-            return inserted ?
-                    new JoinStatus.Joined(find(tDsl, accountId).orElseThrow()) :
-                    new JoinStatus.AlreadyInServer();
-        });
-    }
-
-    @Override
-    public boolean leavesServer(Account account, Server server) throws DataAccessException {
-
-        Objects.requireNonNull(account);
-        Objects.requireNonNull(server);
-
-        return dsl.transactionResult(ctx -> {
-
-            final DSLContext tDsl = ctx.dsl();
-            // I remove the account from the online table.
-            final var online = tDsl.deleteFrom(ONLINE_ACCOUNT)
-                    .where(ONLINE_ACCOUNT.ACCOUNT_ID.eq(account.id()).and(ONLINE_ACCOUNT.SERVER_ID.eq(server.id())))
-                    .returningResult(ONLINE_ACCOUNT)
-                    .fetchOptionalInto(OnlineAccount.class)
-                    .orElse(null);
-            // In case the account provided was not online.
-            if (online == null) return false;
-
-            // I insert the player inside the server account history.
-            tDsl.insertInto(SERVER_ACCOUNT_HISTORY)
-                    .set(SERVER_ACCOUNT_HISTORY.DISPLAY_NAME, online.displayName())
-                    .set(SERVER_ACCOUNT_HISTORY.ACCOUNT_ID, online.accountId())
-                    .set(SERVER_ACCOUNT_HISTORY.SERVER_ID, online.serverId())
-                    .set(SERVER_ACCOUNT_HISTORY.JOIN_DATE, online.joinDate())
-                    .set(SERVER_ACCOUNT_HISTORY.LEAVE_DATE, OffsetDateTime.now())
-                    .execute();
-            return true;
-        });
-    }
-
-    @Override
     public PasswordUpdateStatus updatePassword(Account account, char[] oldPassword, char[] newPassword) {
 
         Objects.requireNonNull(account);
         Objects.requireNonNull(newPassword);
 
+        final var security = database().securityConfig();
         final var dbPassword = new String(account.password(), StandardCharsets.UTF_8);
 
         try {
 
             // I do this here to take the same amount of time if the old password is wrong.
-            final byte[] hashed = security().hashPass(newPassword).getBytes(StandardCharsets.UTF_8);
-            if (!security().argon2().verify(dbPassword, oldPassword)) return new PasswordUpdateStatus.WrongPassword();
+            final byte[] hashed = security
+                    .hashPass(newPassword)
+                    .getBytes(StandardCharsets.UTF_8);
 
-            dsl.update(ACCOUNT)
+            if (!security.argon2().verify(dbPassword, oldPassword)) return new PasswordUpdateStatus.WrongPassword();
+
+            database().dsl().update(ACCOUNT)
                     .set(ACCOUNT.PASSWORD, hashed)
                     .where(ACCOUNT.ID.eq(account.id()))
                     .execute();

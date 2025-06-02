@@ -12,15 +12,17 @@ public interface Database extends AutoCloseable {
 
     SecurityConfig securityConfig();
 
-    AccountQueries auth();
+    AccountQueries account();
 
     ServerQueries server();
 
+    ServerAccountQueries serverAccount();
+
     PunishmentQueries punishment();
 
-    PunishmentListeners punishmentListeners();
-
     RoleQueries role();
+
+    DatabaseEvents events();
 
     @Override
     void close();

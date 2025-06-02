@@ -33,7 +33,7 @@ public final class AuthenticationQueriesTest {
     void signup() {
 
         final var mock = MockAccount.instance();
-        final AccountQueries.SignupStatus status = db.auth().signup(
+        final AccountQueries.SignupStatus status = db.account().signup(
                 mock.username(), mock.password(),
                 mock.ip(), mock.uuid(), Duration.ofHours(1));
 
@@ -44,9 +44,9 @@ public final class AuthenticationQueriesTest {
     @Order(2)
     void logout() {
         final var mock = MockAccount.instance();
-        final Account account = db.auth().find(mock.username()).orElse(null);
+        final Account account = db.account().find(mock.username()).orElse(null);
         assertNotNull(account, "The account is not available.");
-        db.auth().logout(account);
+        db.account().logout(account);
     }
 
     @Test
@@ -54,7 +54,7 @@ public final class AuthenticationQueriesTest {
     void login() {
 
         final var mock = MockAccount.instance();
-        final AccountQueries.LoginStatus login = db.auth()
+        final AccountQueries.LoginStatus login = db.account()
                 .login(mock.username(), mock.password(), mock.ip(), mock.uuid(), Duration.ofHours(1));
 
         assertInstanceOf(LoginStatus.LoggedIn.class, login, "Could not login into the account: " + login);
@@ -69,7 +69,7 @@ public final class AuthenticationQueriesTest {
 
         for (int i = 0; i < (accountLimit + 1); i++) {
 
-            final AccountQueries.SignupStatus status = db.auth().signup(
+            final AccountQueries.SignupStatus status = db.account().signup(
                     mock.username() + "_" + i,
                     mock.password(), ip, mock.uuid(), Duration.ofHours(1));
 
@@ -96,11 +96,11 @@ public final class AuthenticationQueriesTest {
         // Custom DB instance to overwrite and increase the account limit.
         try (var db = DbInitialization.newConnection(100)) {
             for (int i = 0; i < 7; i++) {
-                final Account account = ((Created) db.auth().signup(
+                final Account account = ((Created) db.account().signup(
                         "limit_check_" + i, password.get(),
                         ip + i,
                         mock.uuid(), session)).account();
-                db.auth().logout(account);
+                db.account().logout(account);
                 accounts[i] = account;
             }
         }
@@ -112,13 +112,13 @@ public final class AuthenticationQueriesTest {
         account 3: 127.0.0.3
          */
         // I connect account 0 with account 1 via address 127.0.0.1
-        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[0].username(), password.get(), ip + "1", mock.uuid(), session));
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.account().login(accounts[0].username(), password.get(), ip + "1", mock.uuid(), session));
         // I connect account 2 with account 0 via address 127.0.0.2
-        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[2].username(), password.get(), ip + "0", mock.uuid(), session));
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.account().login(accounts[2].username(), password.get(), ip + "0", mock.uuid(), session));
         // I connect account 1 with account 3 via address 127.0.0.3
-        assertInstanceOf(LoginStatus.LoggedIn.class, db.auth().login(accounts[1].username(), password.get(), ip + "3", mock.uuid(), session));
+        assertInstanceOf(LoginStatus.LoggedIn.class, db.account().login(accounts[1].username(), password.get(), ip + "3", mock.uuid(), session));
         // I don't check the account directly since the equality is done over object identity, which is different.
-        final var tracked = db.auth().findAccounts(ip + "3")
+        final var tracked = db.account().findAccounts(ip + "3")
                 .stream()
                 .map(Account::id)
                 .collect(Collectors.toUnmodifiableSet());

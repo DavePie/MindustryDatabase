@@ -44,14 +44,14 @@ class ChangePassword(handler: CommandHandler) : UnprivilegedClientCommand(handle
         }
 
         val oldPassword = args[0]
-        val account = database!!.auth().find(player.ip(), player.uuid())
+        val account = database!!.account().find(player.ip(), player.uuid())
 
         if (account.isEmpty) {
             Call.infoMessage(player.con(), "[orange]There is either no active session or you're not logged in.")
             return
         }
 
-        val result = database!!.auth().updatePassword(account.get(), oldPassword.toCharArray(), text.toCharArray())
+        val result = database!!.account().updatePassword(account.get(), oldPassword.toCharArray(), text.toCharArray())
 
         when (result) {
             is AccountQueries.PasswordUpdateStatus.WrongPassword -> Call.infoMessage(player.con(), "[scarlet]" +

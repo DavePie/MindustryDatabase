@@ -14,14 +14,14 @@ class Logout(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     }
 
     override fun runner(arguments: Array<String>, player: Player) {
-        val account = database!!.auth().find(player.ip(), player.uuid())
+        val account = database!!.account().find(player.ip(), player.uuid())
 
         if (account.isEmpty) {
             player.sendMessage("[orange]There is either no active session or you're not logged in.")
             return
         }
 
-        database!!.auth().logout(account.get())
+        database!!.account().logout(account.get())
         player.team(Team.derelict)
         player.unit().kill()
         player.sendMessage("Logged out successfully.")

@@ -16,7 +16,7 @@ class RevokeRole(handler: CommandHandler) : RoleCommand(handler) {
         val accountUsername = arguments[0]
         val roleName = arguments[1]
 
-        val account = database!!.auth().find(accountUsername)
+        val account = database!!.account().find(accountUsername)
         val role = database!!.role().findRole(roleName)
 
         if (account.isEmpty) {

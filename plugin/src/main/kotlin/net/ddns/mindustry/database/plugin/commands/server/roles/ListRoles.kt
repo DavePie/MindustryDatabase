@@ -23,7 +23,7 @@ class ListRoles(handler: CommandHandler) : RoleCommand(handler) {
     }
 
     private fun listPlayerRoles(accountUsername: String) {
-        val account = database!!.auth().find(accountUsername)
+        val account = database!!.account().find(accountUsername)
 
         if (account.isEmpty) {
             Log.err("Couldn't find an account by that name.")

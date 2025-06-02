@@ -53,7 +53,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToUsernameMap.remove(player)
         playerToDisplayName.remove(player)
 
-        val signupStatus = database!!.auth().signup(username!!, text.toCharArray(), player.ip(), player.uuid(),
+        val signupStatus = database!!.account().signup(username!!, text.toCharArray(), player.ip(), player.uuid(),
             Duration.ofHours(configSessionDuration.num().toLong()), configAccountLimit.num()) // TODO Move this into the SecurityConfig.
 
         when (signupStatus) {

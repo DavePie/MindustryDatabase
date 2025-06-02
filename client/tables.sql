@@ -19,17 +19,29 @@ CREATE TABLE IF NOT EXISTS account(
 -- TODO Server authorization based on server_whitelist.
 CREATE TABLE IF NOT EXISTS server(
 
-    id               SERIAL       PRIMARY KEY,
-    ip_address       INET         NOT NULL,
-    port             INT          NOT NULL,
-    name             VARCHAR(255) NOT NULL,
+    id                SERIAL       PRIMARY KEY,
+    ip_address        INET         NOT NULL,
+    port              INT          NOT NULL,
+    name              VARCHAR(255) NOT NULL,
+    whitelist_enabled BOOLEAN      NOT NULL DEFAULT FALSE,
     -- Last heartbeat available used in case the server goes offline.
-    heartbeat        TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    heartbeat         TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- The period of the heartbeat in milliseconds.
-    heartbeat_period INT          NOT NULL DEFAULT 5000,
+    heartbeat_period  INT          NOT NULL DEFAULT 5000,
 
     CONSTRAINT u_server_ip_port UNIQUE(ip_address, port),
     CONSTRAINT chk_server_port_valid CHECK (port >= 0 AND port <= 65535)
+);
+
+CREATE TABLE IF NOT EXISTS server_whitelist(
+
+    id         SERIAL PRIMARY KEY,
+    server_id  INT    NOT NULL,
+    account_id INT    NOT NULL,
+
+    CONSTRAINT u_server_whitelist_server_account UNIQUE(server_id, account_id),
+    CONSTRAINT fk_server_whitelist_server  FOREIGN KEY(server_id)  REFERENCES server(id),
+    CONSTRAINT fk_server_whitelist_account FOREIGN KEY(account_id) REFERENCES account(id)
 );
 
 CREATE TABLE IF NOT EXISTS login(

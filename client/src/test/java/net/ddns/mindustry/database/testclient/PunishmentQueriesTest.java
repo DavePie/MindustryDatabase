@@ -2,7 +2,7 @@ package net.ddns.mindustry.database.testclient;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
-import net.ddns.mindustry.database.client.PunishmentListeners;
+import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
@@ -37,11 +37,11 @@ public final class PunishmentQueriesTest {
 
         Assertions.assertInstanceOf(
                 AccountQueries.SignupStatus.Created.class,
-                db.auth().signup(USER_PUNISHED, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
+                db.account().signup(USER_PUNISHED, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
 
         Assertions.assertInstanceOf(
                 AccountQueries.SignupStatus.Created.class,
-                db.auth().signup(USER_STAFF, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
+                db.account().signup(USER_STAFF, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
 
         db.server().add(server.ip(), server.port(), server.name());
     }
@@ -57,10 +57,10 @@ public final class PunishmentQueriesTest {
 
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         final IntConsumer listener = future::complete;
-        db.punishmentListeners().register(PunishmentListeners.Type.BAN, listener);
+        db.events().register(DatabaseEvents.Type.BAN, listener);
 
-        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.auth()
+        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.account()
                 .find(USER_STAFF)
                 .map(PunishmentQueries.Issuer::of)
                 .orElseThrow();
@@ -70,7 +70,7 @@ public final class PunishmentQueriesTest {
             final int id = future.get();
             Assertions.assertEquals(ban.id(), id);
         });
-        db.punishmentListeners().unregister(PunishmentListeners.Type.BAN, listener);
+        db.events().unregister(DatabaseEvents.Type.BAN, listener);
     }
 
     @ParameterizedTest
@@ -79,10 +79,10 @@ public final class PunishmentQueriesTest {
 
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         final IntConsumer listener = future::complete;
-        db.punishmentListeners().register(PunishmentListeners.Type.KICK, listener);
+        db.events().register(DatabaseEvents.Type.KICK, listener);
 
-        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.auth()
+        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.account()
                 .find(USER_STAFF)
                 .map(PunishmentQueries.Issuer::of)
                 .orElseThrow();
@@ -92,7 +92,7 @@ public final class PunishmentQueriesTest {
             final int id = future.get();
             Assertions.assertEquals(kick.id(), id);
         });
-        db.punishmentListeners().unregister(PunishmentListeners.Type.KICK, listener);
+        db.events().unregister(DatabaseEvents.Type.KICK, listener);
     }
 
     @ParameterizedTest
@@ -101,10 +101,10 @@ public final class PunishmentQueriesTest {
 
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         final IntConsumer listener = future::complete;
-        db.punishmentListeners().register(PunishmentListeners.Type.WARN, listener);
+        db.events().register(DatabaseEvents.Type.WARN, listener);
 
-        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.auth()
+        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.account()
                 .find(USER_STAFF)
                 .map(PunishmentQueries.Issuer::of)
                 .orElseThrow();
@@ -114,7 +114,7 @@ public final class PunishmentQueriesTest {
             final int id = future.get();
             Assertions.assertEquals(warn.id(), id);
         });
-        db.punishmentListeners().unregister(PunishmentListeners.Type.WARN, listener);
+        db.events().unregister(DatabaseEvents.Type.WARN, listener);
     }
 
     @ParameterizedTest
@@ -123,10 +123,10 @@ public final class PunishmentQueriesTest {
 
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         final IntConsumer listener = future::complete;
-        db.punishmentListeners().register(PunishmentListeners.Type.MUTE, listener);
+        db.events().register(DatabaseEvents.Type.MUTE, listener);
 
-        final Account punished = db.auth().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.auth()
+        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
+        final PunishmentQueries.Issuer punisher = db.account()
                 .find(USER_STAFF)
                 .map(PunishmentQueries.Issuer::of)
                 .orElseThrow();
@@ -136,6 +136,6 @@ public final class PunishmentQueriesTest {
             final int id = future.get();
             Assertions.assertEquals(mute.id(), id);
         });
-        db.punishmentListeners().unregister(PunishmentListeners.Type.MUTE, listener);
+        db.events().unregister(DatabaseEvents.Type.MUTE, listener);
     }
 }

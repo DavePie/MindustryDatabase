@@ -55,4 +55,8 @@ public interface ServerQueries {
      * @param server The server entry to remove from the database.
      */
     void remove(Server server);
+
+    void modifyWhitelist(Server server, boolean enabled);
+
+    boolean isWhitelistEnabled(Server server);
 }

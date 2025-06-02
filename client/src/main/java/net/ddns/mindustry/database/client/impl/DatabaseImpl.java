@@ -2,6 +2,7 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.*;
 import org.jooq.CloseableDSLContext;
+import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.jooq.postgres.extensions.types.Inet;
 import org.jspecify.annotations.NullMarked;
@@ -18,9 +19,10 @@ public final class DatabaseImpl implements Database {
     private final SecurityConfig config;
     private final AccountQueriesImpl auth;
     private final ServerQueriesImpl server;
+    private final ServerAccountQueriesImpl serverAccount;
     private final PunishmentQueriesImpl punishment;
     private final RoleQueriesImpl role;
-    private final PunishmentListenersImpl punishmentListeners;
+    private final DatabaseEventsImpl punishmentListeners;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
 
@@ -34,11 +36,13 @@ public final class DatabaseImpl implements Database {
                 password);
 
         this.config = Objects.requireNonNull(config);
-        this.auth = new AccountQueriesImpl(dsl, config);
-        this.server = new ServerQueriesImpl(dsl);
-        this.punishment = new PunishmentQueriesImpl(dsl, auth, server);
-        this.role = new RoleQueriesImpl(dsl);
-        try { this.punishmentListeners = new PunishmentListenersImpl(dsl);
+        this.auth = new AccountQueriesImpl(this);
+        this.server = new ServerQueriesImpl(this);
+        this.serverAccount = new ServerAccountQueriesImpl(this);
+        this.punishment = new PunishmentQueriesImpl(this);
+        this.role = new RoleQueriesImpl(this);
+        // Must be last since it uses the classes above during initialization.
+        try { this.punishmentListeners = new DatabaseEventsImpl(this);
         } catch (SQLException e) {
             throw new RuntimeException("Could not start the punishment lister task.", e);
         }
@@ -52,34 +56,43 @@ public final class DatabaseImpl implements Database {
         }
     }
 
+    public DSLContext dsl() {
+        return dsl;
+    }
+
     @Override
     public SecurityConfig securityConfig() {
         return config;
     }
 
     @Override
-    public AccountQueries auth() {
+    public AccountQueriesImpl account() {
         return auth;
     }
 
     @Override
-    public ServerQueries server() {
+    public ServerQueriesImpl server() {
         return server;
     }
 
     @Override
-    public PunishmentQueries punishment() {
+    public ServerAccountQueriesImpl serverAccount() {
+        return serverAccount;
+    }
+
+    @Override
+    public PunishmentQueriesImpl punishment() {
         return punishment;
     }
 
     @Override
-    public PunishmentListeners punishmentListeners() {
-        return punishmentListeners;
+    public RoleQueriesImpl role() {
+        return role;
     }
 
     @Override
-    public RoleQueries role() {
-        return role;
+    public DatabaseEventsImpl events() {
+        return punishmentListeners;
     }
 
     @Override

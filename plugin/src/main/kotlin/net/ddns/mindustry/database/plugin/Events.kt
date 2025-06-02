@@ -10,7 +10,7 @@ import mindustry.game.EventType.StateChangeEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.net.Administration
-import net.ddns.mindustry.database.client.AccountQueries
+import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 
@@ -31,27 +31,27 @@ private fun playerConnect(event: PlayerConnect) {
         return
     }
 
-    val status = database!!.auth().joinsServer(server.get(), event.player.name(), event.player.ip(), event.player.uuid())
+    val status = database!!.serverAccount().joinsServer(server.get(), event.player.name(), event.player.ip(), event.player.uuid())
 
     when (status) {
-        is AccountQueries.JoinStatus.NotAuthenticated -> {
+        is ServerAccountQueries.JoinStatus.NotAuthenticated -> {
             Call.infoMessage(event.player.con(), "You are not logged in. Please log in using the [gold]/login[]" +
                     " command or signup with the [gold]/signup[] command.")
             event.player.team(Team.derelict)
         }
 
-        is AccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
+        is ServerAccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
 
-        is AccountQueries.JoinStatus.NotAuthorized -> event.player.kick("You're not authorized to join this server.", 0)
+        is ServerAccountQueries.JoinStatus.NotWhitelisted -> event.player.kick("You're not whitelisted to join this server.", 0)
 
-        is AccountQueries.JoinStatus.Joined -> {
+        is ServerAccountQueries.JoinStatus.Joined -> {
             event.player.sendMessage("[gold]Welcome back to the server!")
         }
     }
 }
 
 private fun playerLeave(event: PlayerLeave) {
-    val account = database!!.auth().find(event.player.ip(), event.player.uuid())
+    val account = database!!.account().find(event.player.ip(), event.player.uuid())
 
     if (account.isEmpty) {
         Log.warn("A player left but they could not be found in the database. They may not have a session.")
@@ -59,7 +59,7 @@ private fun playerLeave(event: PlayerLeave) {
     }
     val port = Administration.Config.port.num()
     val server = database!!.server().find(configServerIP.string(), port)
-    database!!.auth().leavesServer(account.get(), server.get())
+    database!!.serverAccount().leavesServer(account.get(), server.get())
 }
 
 private fun gameOver(event: StateChangeEvent) {

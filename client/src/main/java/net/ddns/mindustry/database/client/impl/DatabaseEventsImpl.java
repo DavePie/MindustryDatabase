@@ -1,8 +1,7 @@
 package net.ddns.mindustry.database.client.impl;
 
-import net.ddns.mindustry.database.client.PunishmentListeners;
+import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.schema.Tables;
-import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import org.postgresql.PGNotification;
 import org.postgresql.jdbc.PgConnection;
@@ -16,19 +15,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.IntConsumer;
 
 @NullMarked
-public final class PunishmentListenersImpl implements PunishmentListeners, AutoCloseable {
+public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
 
     private static final String PREFIX = "channel_insert_";
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
     private final HashMap<Type, Holder> listeners = new HashMap<>();
-    private final DSLContext dsl;
+    private final DatabaseImpl database;
     private final PgConnection pgCon;
     private final ScheduledFuture<?> notificationThread;
 
-    public PunishmentListenersImpl(DSLContext dsl) throws SQLException {
+    public DatabaseEventsImpl(DatabaseImpl database) throws SQLException {
 
-        this.dsl = Objects.requireNonNull(dsl);
-        this.pgCon = Objects.requireNonNull(dsl.configuration()
+        this.database = Objects.requireNonNull(database);
+        this.pgCon = Objects.requireNonNull(database.dsl().configuration()
                         .connectionProvider()
                         .acquire(), "Could not retrieve the DSLContext connection.")
                 .unwrap(PgConnection.class);
@@ -36,7 +35,7 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
         // I initialize the holders and I start to listen.
         for (Type type : Type.values()) {
             listeners.put(type, new Holder());
-            dsl.execute(listenSqlFor(type));
+            database.dsl().execute(listenSqlFor(type));
         }
         this.notificationThread = executor.scheduleAtFixedRate(this::notificationListener, 1, 1, TimeUnit.SECONDS);
     }
@@ -63,7 +62,7 @@ public final class PunishmentListenersImpl implements PunishmentListeners, AutoC
         if (Thread.interrupted()) return; // The close() method has been called.
         try {
             // Unfortunately, I'm forced to do this; else the notifications will not get updated.
-            dsl.selectOne().execute();
+            database.dsl().selectOne().execute();
             final PGNotification[] notifications = pgCon.getNotifications();
             if (notifications == null) return; // No notifications to listen to.
 

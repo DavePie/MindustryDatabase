@@ -54,7 +54,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         val username = playerToUsernameMap[player]
         playerToUsernameMap.remove(player)
 
-        val loginResult = database!!.auth().login(
+        val loginResult = database!!.account().login(
             username!!, text.toCharArray(), player.ip(),
             player.uuid(), Duration.ofHours(configSessionDuration.num().toLong())
         )

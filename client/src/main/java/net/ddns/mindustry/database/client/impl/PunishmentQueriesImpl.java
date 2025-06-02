@@ -15,7 +15,7 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
-public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountImpl, ServerQueriesImpl serverImpl) implements PunishmentQueries {
+public record PunishmentQueriesImpl(DatabaseImpl database) implements PunishmentQueries {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -64,7 +64,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         Objects.requireNonNull(creation);
         if (expiration != null && expiration.isBefore(creation)) throw new IllegalArgumentException("The expiration date is before the creation date.");
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
@@ -97,7 +97,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         Objects.requireNonNull(expiration);
         if (expiration.isBefore(creation)) throw new IllegalArgumentException("The expiration date is before the creation date.");
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
@@ -118,21 +118,22 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
     @Override
     public Optional<Issuer> findIssuer(int id) {
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
             final DSLContext tDsl = ctx.dsl();
             return tDsl.selectFrom(PUNISHMENT_ISSUER)
                     .where(PUNISHMENT_ISSUER.ID.eq(id))
                     .fetchOptionalInto(PunishmentIssuer.class)
                     .map(result -> switch (result.type()) {
-                        case account -> Issuer.of(accountImpl().find(tDsl, result.accountId()).orElseThrow());
-                        case server -> Issuer.of(serverImpl().find(tDsl, result.serverId()).orElseThrow());
+                        case account -> Issuer.of(database().account().find(tDsl, result.accountId()).orElseThrow());
+                        case server  -> Issuer.of(database().server() .find(tDsl, result.serverId()) .orElseThrow());
                     });
         });
     }
 
     @Override
     public Optional<Ban> latestBan() {
-        return dsl.select()
+        return database().dsl()
+                .select()
                 .from(BAN)
                 .orderBy(BAN.CREATION_DATE.desc())
                 .limit(1)
@@ -141,7 +142,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public Optional<Mute> latestMute() {
-        return dsl.select()
+        return database().dsl()
+                .select()
                 .from(MUTE)
                 .orderBy(MUTE.CREATION_DATE.desc())
                 .limit(1)
@@ -150,7 +152,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public Optional<Warn> latestUnseenWarn() {
-        return dsl.select()
+        return database().dsl()
+                .select()
                 .from(WARN)
                 .where(WARN.SEEN.eq(false))
                 .orderBy(WARN.CREATION_DATE.desc())
@@ -160,7 +163,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public List<Warn> unseenWarns() {
-        return dsl.select()
+        return database().dsl()
+                .select()
                 .from(WARN)
                 .where(WARN.SEEN.eq(false))
                 .fetchInto(Warn.class);
@@ -168,7 +172,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public void markWarnSeen(Warn warn) {
-        dsl.update(WARN)
+        database().dsl()
+                .update(WARN)
                 .set(WARN.SEEN, true)
                 .where(WARN.ID.eq(warn.id()))
                 .execute();
@@ -177,7 +182,8 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
     @Override
     public List<Ban> activeBans(Account account) {
         final var now = OffsetDateTime.now();
-        return dsl.select()
+        return database().dsl()
+                .select()
                 .from(BAN)
                 .leftAntiJoin(UNBAN).on(UNBAN.BAN_ID.eq(BAN.ID))
                 .where(BAN.EXPIRATION_DATE.isNull().or(BAN.EXPIRATION_DATE.greaterThan(now)))
@@ -186,33 +192,37 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
 
     @Override
     public Optional<Ban> findBan(long uuid) {
-        return findBan(dsl, uuid);
+        return findBan(database().dsl(), uuid);
     }
 
     @Override
     public Optional<Ban> findBan(int id) {
-        return dsl.selectFrom(BAN)
+        return database().dsl()
+                .selectFrom(BAN)
                 .where(BAN.ID.eq(id))
                 .fetchOptionalInto(Ban.class);
     }
 
     @Override
     public Optional<Kick> findKick(int id) {
-        return dsl.selectFrom(KICK)
+        return database().dsl()
+                .selectFrom(KICK)
                 .where(KICK.ID.eq(id))
                 .fetchOptionalInto(Kick.class);
     }
 
     @Override
     public Optional<Warn> findWarn(int id) {
-        return dsl.selectFrom(WARN)
+        return database().dsl()
+                .selectFrom(WARN)
                 .where(WARN.ID.eq(id))
                 .fetchOptionalInto(Warn.class);
     }
 
     @Override
     public Optional<Mute> findMute(int id) {
-        return dsl.selectFrom(MUTE)
+        return database().dsl()
+                .selectFrom(MUTE)
                 .where(MUTE.ID.eq(id))
                 .fetchOptionalInto(Mute.class);
     }
@@ -243,7 +253,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
@@ -267,7 +277,7 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         Objects.requireNonNull(reason);
         Objects.requireNonNull(server);
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
@@ -289,14 +299,14 @@ public record PunishmentQueriesImpl(DSLContext dsl, AccountQueriesImpl accountIm
         Objects.requireNonNull(ban);
         Objects.requireNonNull(issuer);
 
-        return dsl.transactionResult(ctx -> {
+        return database().dsl().transactionResult(ctx -> {
 
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
             // I insert first, so I'm sure a row is always present,
             // and I avoid the collision in case I do it after the select.
-            final var oUnban = dsl.insertInto(UNBAN)
+            final var oUnban = tDsl.insertInto(UNBAN)
                     .set(UNBAN.BAN_ID, ban.id())
                     .set(UNBAN.ISSUER_ID, issuerId)
                     .onConflictDoNothing()

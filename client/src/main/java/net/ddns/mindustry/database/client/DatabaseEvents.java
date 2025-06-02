@@ -4,7 +4,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.function.IntConsumer;
 
 @NullMarked
-public interface PunishmentListeners {
+public interface DatabaseEvents {
 
     void register(Type type, IntConsumer listener);
 
