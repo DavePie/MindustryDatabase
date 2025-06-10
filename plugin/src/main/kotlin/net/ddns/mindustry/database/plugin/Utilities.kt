@@ -6,6 +6,7 @@ import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.client.SecurityConfig
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.commands.BaseCommand
+import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configAccountLimit
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configURL
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUser
@@ -29,6 +30,7 @@ fun newDatabase(): Database? {
             .argon2Iteration(10)
             .argon2Memory(20)
             .argon2Parallelism(2)
+            .accountLimit(configAccountLimit.num())
 
         securityConfig = securityConfigBuilder.build()
     } catch (e: NoSuchAlgorithmException) {

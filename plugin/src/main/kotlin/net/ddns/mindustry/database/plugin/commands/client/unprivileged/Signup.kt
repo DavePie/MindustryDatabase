@@ -6,7 +6,6 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import net.ddns.mindustry.database.client.AccountQueries.SignupStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
-import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configAccountLimit
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSessionDuration
 import java.time.Duration
 
@@ -54,7 +53,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToDisplayName.remove(player)
 
         val signupStatus = database!!.account().signup(username!!, text.toCharArray(), player.ip(), player.uuid(),
-            Duration.ofHours(configSessionDuration.num().toLong()), configAccountLimit.num()) // TODO Move this into the SecurityConfig.
+            Duration.ofHours(configSessionDuration.num().toLong()))
 
         when (signupStatus) {
             is UsernameInUse -> {
