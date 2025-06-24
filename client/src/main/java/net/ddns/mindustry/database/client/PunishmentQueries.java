@@ -25,7 +25,7 @@ public interface PunishmentQueries {
 
     List<Ban> activeBans(Account account);
 
-    Optional<Ban> findBan(long uuid);
+    Optional<Ban> findBan(long uid);
 
     Optional<Ban> findBan(int id);
 
@@ -59,7 +59,6 @@ public interface PunishmentQueries {
         }
     }
 
-    @NullMarked
     sealed interface Issuer {
 
         static Issuer of(Server server) {

@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS account(
     )
 );
 
--- TODO Server authorization based on server_whitelist.
 CREATE TABLE IF NOT EXISTS server(
 
     id                SERIAL       PRIMARY KEY,
@@ -141,7 +140,7 @@ CREATE TABLE IF NOT EXISTS ban(
 
     id              SERIAL      PRIMARY KEY,
     -- Random value used to search for this ban.
-    uuid            BIGINT      NOT NULL UNIQUE,
+    uid             BIGINT      NOT NULL UNIQUE,
     account_id      INT         NOT NULL,
     issuer_id       INT         NOT NULL,
     server_id       INT         NOT NULL,
@@ -216,30 +215,29 @@ CREATE TABLE IF NOT EXISTS mute(
     )
 );
 
--- TODO Make this a generic appeal to cover mutes, bans and other things?
-CREATE TABLE IF NOT EXISTS ban_appeal(
+CREATE TABLE IF NOT EXISTS appeal(
 
     id            SERIAL      PRIMARY KEY,
+    uid           BIGINT      NOT NULL UNIQUE,
     account_id    INT         NOT NULL,
-    ban_id        INT         NOT NULL,
     message       TEXT        NOT NULL,
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_ban_appeal_account FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_ban_appeal_ban     FOREIGN KEY(ban_id)     REFERENCES ban(id)
+    CONSTRAINT fk_appeal_account FOREIGN KEY(account_id) REFERENCES account(id)
 );
--- TODO Automatically insert unban if accepted is true?
-CREATE TABLE IF NOT EXISTS ban_appeal_reply(
+
+CREATE TABLE IF NOT EXISTS appeal_reply(
 
     id            SERIAL      PRIMARY KEY,
-    ban_appeal_id INT         NOT NULL,
+    uid           BIGINT      NOT NULL UNIQUE,
+    appeal_id     INT         NOT NULL,
     staff_id      INT         NOT NULL,
     accepted      BOOLEAN     NOT NULL,
     message       TEXT        NOT NULL DEFAULT '',
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_ban_appeal_reply_ban   FOREIGN KEY(ban_appeal_id) REFERENCES ban_appeal(id),
-    CONSTRAINT fk_ban_appeal_reply_staff FOREIGN KEY(staff_id)      REFERENCES account(id)
+    CONSTRAINT fk_appeal_reply_appeal FOREIGN KEY(appeal_id) REFERENCES appeal(id),
+    CONSTRAINT fk_appeal_reply_staff  FOREIGN KEY(staff_id)  REFERENCES account(id)
 );
 
 CREATE TABLE IF NOT EXISTS ip_blacklist(

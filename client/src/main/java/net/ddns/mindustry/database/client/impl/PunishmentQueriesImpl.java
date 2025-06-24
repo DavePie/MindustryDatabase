@@ -19,9 +19,9 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    public Optional<Ban> findBan(DSLContext tDsl, long uuid) {
+    public Optional<Ban> findBan(DSLContext tDsl, long uid) {
         return tDsl.selectFrom(BAN)
-                .where(BAN.UUID.eq(uuid))
+                .where(BAN.UID.eq(uid))
                 .fetchOptionalInto(Ban.class);
     }
 
@@ -70,15 +70,15 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
             // I generate an unique uuid.
-            long randomUuid = RANDOM.nextLong();
-            while (findBan(tDsl, randomUuid).isPresent()) randomUuid = RANDOM.nextLong();
+            long randomUid = RANDOM.nextLong();
+            while (findBan(tDsl, randomUid).isPresent()) randomUid = RANDOM.nextLong();
 
             return tDsl.insertInto(BAN)
                     .set(BAN.ACCOUNT_ID,      punished.id())
                     .set(BAN.ISSUER_ID,       issuerId)
                     .set(BAN.REASON,          reason)
                     .set(BAN.SERVER_ID,       server.id())
-                    .set(BAN.UUID,            randomUuid)
+                    .set(BAN.UID,             randomUid)
                     .set(BAN.CREATION_DATE,   creation)
                     .set(BAN.EXPIRATION_DATE, expiration)
                     .returningResult(BAN)
@@ -191,8 +191,8 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
     }
 
     @Override
-    public Optional<Ban> findBan(long uuid) {
-        return findBan(database().dsl(), uuid);
+    public Optional<Ban> findBan(long uid) {
+        return findBan(database().dsl(), uid);
     }
 
     @Override
