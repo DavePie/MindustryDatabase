@@ -5,34 +5,41 @@ import de.mkammerer.argon2.Argon2Factory;
 import org.jspecify.annotations.NullMarked;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Objects;
 
 /// Class containing the hash configuration for sessions and passwords.
 @NullMarked
-public record SecurityConfig(MessageDigest sessionDigest,
-                             Argon2 argon2,
-                             int argon2Iteration,
-                             int argon2Memory,
-                             int argon2Parallelism,
-                             int minimumPasswordLength,
-                             int accountLimit) {
+public record SecurityConfig(
+        SecureRandom random,
+        MessageDigest sessionDigest,
+        Argon2 argon2,
+        int argon2Iteration,
+        int argon2Memory,
+        int argon2Parallelism,
+        int minimumPasswordLength,
+        int accountLimit) {
 
     public SecurityConfig {
+        Objects.requireNonNull(random);
         Objects.requireNonNull(sessionDigest);
         Objects.requireNonNull(argon2);
         if (minimumPasswordLength <= 0) throw new IllegalArgumentException("The minimum password length cannot be 0 or negative.");
         if (accountLimit <= 0) throw new IllegalArgumentException("The account limit cannot be 0 or negative.");
     }
 
-    public SecurityConfig(String sessionAlgorithm,
-                          int saltLength,
-                          int hashLength,
-                          int argon2Iteration,
-                          int argon2Memory,
-                          int argon2Parallelism,
-                          int minimumPasswordLength,
-                          int accountsLimit) throws NoSuchAlgorithmException {
-        this(MessageDigest.getInstance(Objects.requireNonNull(sessionAlgorithm)),
+    public SecurityConfig(
+            SecureRandom random,
+            String sessionAlgorithm,
+            int saltLength,
+            int hashLength,
+            int argon2Iteration,
+            int argon2Memory,
+            int argon2Parallelism,
+            int minimumPasswordLength,
+            int accountsLimit) throws NoSuchAlgorithmException {
+        this(random,
+                MessageDigest.getInstance(Objects.requireNonNull(sessionAlgorithm)),
                 // ARGON2id by default.
                 Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, saltLength, hashLength),
                 argon2Iteration,
@@ -49,6 +56,7 @@ public record SecurityConfig(MessageDigest sessionDigest,
     public static final class Builder {
 
         private String sessionAlgorithm = "SHA-256";
+        private SecureRandom random = new SecureRandom();
         private int saltLength;
         private int hashLength;
         private int argon2Iteration;
@@ -61,6 +69,11 @@ public record SecurityConfig(MessageDigest sessionDigest,
 
         public static Builder create() {
             return new Builder();
+        }
+
+        public Builder secureRandom(SecureRandom random) {
+            this.random = Objects.requireNonNull(random);
+            return this;
         }
 
         public Builder sessionAlgorithm(String algorithm) {
@@ -105,7 +118,9 @@ public record SecurityConfig(MessageDigest sessionDigest,
         }
 
         public SecurityConfig build() throws NoSuchAlgorithmException {
-            return new SecurityConfig(sessionAlgorithm,
+            return new SecurityConfig(
+                    random,
+                    sessionAlgorithm,
                     saltLength,
                     hashLength,
                     argon2Iteration,
