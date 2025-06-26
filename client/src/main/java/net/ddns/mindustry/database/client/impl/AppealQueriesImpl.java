@@ -5,7 +5,10 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Appeal;
 import net.ddns.mindustry.database.schema.tables.pojos.AppealReply;
 import org.jspecify.annotations.NullMarked;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.APPEAL;
 import static net.ddns.mindustry.database.schema.Tables.APPEAL_REPLY;
@@ -31,7 +34,37 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
 
     @Override
     public Status appeal(Account account, String message) {
-        return null;
+
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(message);
+        if (message.isBlank()) return Status.EMPTY_MESSAGE;
+
+        final boolean rateLimited = latestAccountAppeal(account)
+                .map(Appeal::creationDate)
+                // I transform the creation date to the duration between it and now.
+                .map(latest -> Duration.between(latest, OffsetDateTime.now()))
+                // I rate limit if the appeal has been issued before 6 hours since the last one.
+                .map(duration -> duration.toHours() < 6)
+                .orElse(false);
+
+        if (rateLimited) return Status.RATE_LIMITED;
+        for (int i = 0; i < 100; i++) {
+
+            final long uid = database()
+                    .securityConfig()
+                    .random()
+                    .nextLong();
+
+            final boolean inserted = database().dsl()
+                    .insertInto(APPEAL)
+                    .set(APPEAL.UID, uid)
+                    .set(APPEAL.ACCOUNT_ID, account.id())
+                    .set(APPEAL.MESSAGE, message)
+                    .onConflictDoNothing()
+                    .execute() == 1;
+            if (inserted) return Status.OK;
+        }
+        throw new IllegalStateException("Could not insert the appeal with an unique uid.");
     }
 
     @Override
@@ -88,6 +121,17 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
                 .where(APPEAL.ACCOUNT_ID.eq(account.id()))
                 .fetchOptionalInto(int.class)
                 .orElseThrow(() -> new IllegalStateException("SELECT COUNT failed."));
+    }
+
+    @Override
+    public Optional<Appeal> latestAccountAppeal(Account account) {
+        Objects.requireNonNull(account);
+        return database.dsl()
+                .selectFrom(APPEAL)
+                .where(APPEAL.ACCOUNT_ID.eq(account.id()))
+                .orderBy(APPEAL.CREATION_DATE.desc())
+                .limit(1)
+                .fetchOptionalInto(Appeal.class);
     }
 
     @Override

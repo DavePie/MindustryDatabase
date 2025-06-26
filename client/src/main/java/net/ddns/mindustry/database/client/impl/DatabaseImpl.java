@@ -22,6 +22,7 @@ public final class DatabaseImpl implements Database {
     private final ServerAccountQueriesImpl serverAccount;
     private final PunishmentQueriesImpl punishment;
     private final RoleQueriesImpl role;
+    private final AppealQueriesImpl appeal;
     private final DatabaseEventsImpl punishmentListeners;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
@@ -41,6 +42,7 @@ public final class DatabaseImpl implements Database {
         this.serverAccount = new ServerAccountQueriesImpl(this);
         this.punishment = new PunishmentQueriesImpl(this);
         this.role = new RoleQueriesImpl(this);
+        this.appeal = new AppealQueriesImpl(this);
         // Must be last since it uses the classes above during initialization.
         try { this.punishmentListeners = new DatabaseEventsImpl(this);
         } catch (SQLException e) {
@@ -88,6 +90,11 @@ public final class DatabaseImpl implements Database {
     @Override
     public RoleQueriesImpl role() {
         return role;
+    }
+
+    @Override
+    public AppealQueries appeal() {
+        return appeal;
     }
 
     @Override

@@ -24,6 +24,8 @@ public interface AppealQueries {
 
     int accountAppealsCount(Account account);
 
+    Optional<Appeal> latestAccountAppeal(Account account);
+
     List<AppealReply> appealReplies(Appeal appeal);
 
     int appealRepliesCount(Appeal appeal);

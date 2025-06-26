@@ -22,6 +22,8 @@ public interface Database extends AutoCloseable {
 
     RoleQueries role();
 
+    AppealQueries appeal();
+
     DatabaseEvents events();
 
     @Override
