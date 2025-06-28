@@ -19,37 +19,41 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.IntConsumer;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Execution(ExecutionMode.CONCURRENT)
 public final class PunishmentQueriesTest {
 
-    private static final String USER_PUNISHED = "punished";
-    private static final String USER_STAFF    = "staff";
-    private static Database db;
+    private final Database db;
+    private final Account punished;
+    private final Account staff;
 
-    @BeforeAll
-    static void initialize() {
+    public PunishmentQueriesTest() {
 
-        db = DbInitialization.newConnection(2);
+        // Initializing the necessary things to run the tests.
 
-        // I initialize the necessary things to run this test.
+        this.db = DbInitialization.newConnection(2);
+        final var mock1  = MockAccount.random();
+        final var mock2  = MockAccount.random();
+        final var server = MockServer.instance();
 
-        final var account = MockAccount.instance();
-        final var server  = MockServer.instance();
-
-        Assertions.assertInstanceOf(
-                AccountQueries.SignupStatus.Created.class,
-                db.account().signup(USER_PUNISHED, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
-
-        Assertions.assertInstanceOf(
-                AccountQueries.SignupStatus.Created.class,
-                db.account().signup(USER_STAFF, account.password(), account.ip(), account.uuid(), Duration.ofHours(1)));
-
+        this.punished = Assertions.assertInstanceOf(AccountQueries.SignupStatus.Created.class, db.account().signup(
+                mock1.username(),
+                mock1.password(),
+                mock1.ip(),
+                mock1.uuid(),
+                Duration.ofHours(1))).account();
+        this.staff = Assertions.assertInstanceOf(AccountQueries.SignupStatus.Created.class, db.account().signup(
+                mock2.username(),
+                mock2.password(),
+                mock2.ip(),
+                mock2.uuid(),
+                Duration.ofHours(1))).account();
         db.server().add(server.ip(), server.port(), server.name());
     }
 
     @AfterAll
-    static void close() throws Exception {
-        if (db != null) db.close();
+    void close() throws Exception {
+        db.close();
     }
 
     @ParameterizedTest
@@ -59,14 +63,7 @@ public final class PunishmentQueriesTest {
         final var queue = new LinkedBlockingQueue<Integer>();
         final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.BAN, listener);
-
-        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.account()
-                .find(USER_STAFF)
-                .map(PunishmentQueries.Issuer::of)
-                .orElseThrow();
-
-        final Ban ban = db.punishment().ban(punished, punisher, reason, MockServer.fromDb(db), Duration.ofDays(15));
+        final Ban ban = db.punishment().ban(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db), Duration.ofDays(15));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             while (true) {
                 final int id = queue.take();
@@ -84,13 +81,7 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.KICK, listener);
 
-        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.account()
-                .find(USER_STAFF)
-                .map(PunishmentQueries.Issuer::of)
-                .orElseThrow();
-
-        final Kick kick = db.punishment().kick(punished, punisher, reason, MockServer.fromDb(db));
+        final Kick kick = db.punishment().kick(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             while (true) {
                 final int id = queue.take();
@@ -108,13 +99,7 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.WARN, listener);
 
-        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.account()
-                .find(USER_STAFF)
-                .map(PunishmentQueries.Issuer::of)
-                .orElseThrow();
-
-        final Warn warn = db.punishment().warn(punished, punisher, reason, MockServer.fromDb(db));
+        final Warn warn = db.punishment().warn(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             while (true) {
                 final int id = queue.take();
@@ -132,13 +117,7 @@ public final class PunishmentQueriesTest {
         final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.MUTE, listener);
 
-        final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
-        final PunishmentQueries.Issuer punisher = db.account()
-                .find(USER_STAFF)
-                .map(PunishmentQueries.Issuer::of)
-                .orElseThrow();
-
-        final Mute mute = db.punishment().mute(punished, punisher, reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS));
+        final Mute mute = db.punishment().mute(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
             while (true) {
                 final int id = queue.take();
