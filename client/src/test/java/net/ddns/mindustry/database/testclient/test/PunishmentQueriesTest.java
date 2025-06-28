@@ -1,6 +1,5 @@
 package net.ddns.mindustry.database.testclient.test;
 
-import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.client.PunishmentQueries;
@@ -9,6 +8,7 @@ import net.ddns.mindustry.database.schema.tables.pojos.*;
 import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.data.MockServer;
+import net.ddns.mindustry.database.testclient.util.AccountUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.IntConsumer;
+import static net.ddns.mindustry.database.client.AccountQueries.SignupStatus.Created;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Execution(ExecutionMode.CONCURRENT)
@@ -36,18 +37,8 @@ public final class PunishmentQueriesTest {
         final var mock2  = MockAccount.random();
         final var server = MockServer.instance();
 
-        this.punished = Assertions.assertInstanceOf(AccountQueries.SignupStatus.Created.class, db.account().signup(
-                mock1.username(),
-                mock1.password(),
-                mock1.ip(),
-                mock1.uuid(),
-                Duration.ofHours(1))).account();
-        this.staff = Assertions.assertInstanceOf(AccountQueries.SignupStatus.Created.class, db.account().signup(
-                mock2.username(),
-                mock2.password(),
-                mock2.ip(),
-                mock2.uuid(),
-                Duration.ofHours(1))).account();
+        this.punished = Assertions.assertInstanceOf(Created.class, AccountUtil.signup(db, mock1)).account();
+        this.staff    = Assertions.assertInstanceOf(Created.class, AccountUtil.signup(db, mock2)).account();
         db.server().add(server.ip(), server.port(), server.name());
     }
 

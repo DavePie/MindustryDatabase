@@ -20,13 +20,6 @@ public record MockAccount(String username, char[] password, String ip, String uu
         }
     }
 
-    public static MockAccount instance() {
-        return new MockAccount("username",
-                new char[] {'H', 'I', '!', ':', 'D'},
-                "127.0.0.1",
-                "f82ebecb-ec7f-4da6-bf25-ab2948cb3377");
-    }
-
     public static MockAccount random() {
 
         final String username = SQIDS.encode(List.of(RANDOM.nextLong(0, Long.MAX_VALUE)));
@@ -41,5 +34,9 @@ public record MockAccount(String username, char[] password, String ip, String uu
         } catch (UnknownHostException e) { throw new IllegalStateException(e);}
         final String uuid = UUID.randomUUID().toString();
         return new MockAccount(username, password, ipv4, uuid);
+    }
+
+    public MockAccount withIp(String ip) {
+        return new MockAccount(username, password, ip, uuid);
     }
 }
