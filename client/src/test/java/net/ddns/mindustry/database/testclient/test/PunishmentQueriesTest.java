@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.testclient;
+package net.ddns.mindustry.database.testclient.test;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
@@ -6,6 +6,7 @@ import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
+import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.data.MockServer;
 import org.junit.jupiter.api.*;
@@ -15,7 +16,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.IntConsumer;
 
 @Execution(ExecutionMode.CONCURRENT)
@@ -28,7 +29,7 @@ public final class PunishmentQueriesTest {
     @BeforeAll
     static void initialize() {
 
-        db = DbInitialization.clearAndConnect(2);
+        db = DbInitialization.newConnection(2);
 
         // I initialize the necessary things to run this test.
 
@@ -47,7 +48,7 @@ public final class PunishmentQueriesTest {
     }
 
     @AfterAll
-    static void close() {
+    static void close() throws Exception {
         if (db != null) db.close();
     }
 
@@ -55,8 +56,8 @@ public final class PunishmentQueriesTest {
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
     void ban(String reason) {
 
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
-        final IntConsumer listener = future::complete;
+        final var queue = new LinkedBlockingQueue<Integer>();
+        final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.BAN, listener);
 
         final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
@@ -67,8 +68,10 @@ public final class PunishmentQueriesTest {
 
         final Ban ban = db.punishment().ban(punished, punisher, reason, MockServer.fromDb(db), Duration.ofDays(15));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            final int id = future.get();
-            Assertions.assertEquals(ban.id(), id);
+            while (true) {
+                final int id = queue.take();
+                if (id == ban.id()) break;
+            }
         });
         db.events().unregister(DatabaseEvents.Type.BAN, listener);
     }
@@ -77,8 +80,8 @@ public final class PunishmentQueriesTest {
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
     void kick(String reason) {
 
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
-        final IntConsumer listener = future::complete;
+        final var queue = new LinkedBlockingQueue<Integer>();
+        final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.KICK, listener);
 
         final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
@@ -89,8 +92,10 @@ public final class PunishmentQueriesTest {
 
         final Kick kick = db.punishment().kick(punished, punisher, reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            final int id = future.get();
-            Assertions.assertEquals(kick.id(), id);
+            while (true) {
+                final int id = queue.take();
+                if (id == kick.id()) break;
+            }
         });
         db.events().unregister(DatabaseEvents.Type.KICK, listener);
     }
@@ -99,8 +104,8 @@ public final class PunishmentQueriesTest {
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
     void warn(String reason) {
 
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
-        final IntConsumer listener = future::complete;
+        final var queue = new LinkedBlockingQueue<Integer>();
+        final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.WARN, listener);
 
         final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
@@ -111,8 +116,10 @@ public final class PunishmentQueriesTest {
 
         final Warn warn = db.punishment().warn(punished, punisher, reason, MockServer.fromDb(db));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            final int id = future.get();
-            Assertions.assertEquals(warn.id(), id);
+            while (true) {
+                final int id = queue.take();
+                if (id == warn.id()) break;
+            }
         });
         db.events().unregister(DatabaseEvents.Type.WARN, listener);
     }
@@ -121,8 +128,8 @@ public final class PunishmentQueriesTest {
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
     void mute(String reason) {
 
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
-        final IntConsumer listener = future::complete;
+        final var queue = new LinkedBlockingQueue<Integer>();
+        final IntConsumer listener = queue::add;
         db.events().register(DatabaseEvents.Type.MUTE, listener);
 
         final Account punished = db.account().find(USER_PUNISHED).orElseThrow();
@@ -133,8 +140,10 @@ public final class PunishmentQueriesTest {
 
         final Mute mute = db.punishment().mute(punished, punisher, reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS));
         Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            final int id = future.get();
-            Assertions.assertEquals(mute.id(), id);
+            while (true) {
+                final int id = queue.take();
+                if (id == mute.id()) break;
+            }
         });
         db.events().unregister(DatabaseEvents.Type.MUTE, listener);
     }

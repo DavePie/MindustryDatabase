@@ -27,5 +27,5 @@ public interface Database extends AutoCloseable {
     DatabaseEvents events();
 
     @Override
-    void close();
+    void close() throws Exception;
 }

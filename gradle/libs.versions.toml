@@ -4,6 +4,7 @@ postgresql = "42.7.5"
 argon2     = "2.11"
 jna        = "5.16.0"
 jspecify   = "1.0.0"
+sqids   = "0.1.0"
 
 [plugins]
 jooqCodegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq"}
@@ -15,3 +16,4 @@ jooqExt    = { module = "org.jooq:jooq-postgres-extensions", version.ref = "jooq
 argon2     = { module = "de.mkammerer:argon2-jvm"          , version.ref = "argon2" }
 jna        = { module = "net.java.dev.jna:jna"             , version.ref = "jna" }
 jspecify   = { module = "org.jspecify:jspecify"            , version.ref = "jspecify" }
+sqids      = { module = "org.sqids:sqids"                  , version.ref = "sqids" }

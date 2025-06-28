@@ -27,10 +27,7 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
     public DatabaseEventsImpl(DatabaseImpl database) throws SQLException {
 
         this.database = Objects.requireNonNull(database);
-        this.pgCon = Objects.requireNonNull(database.dsl().configuration()
-                        .connectionProvider()
-                        .acquire(), "Could not retrieve the DSLContext connection.")
-                .unwrap(PgConnection.class);
+        this.pgCon = database.connection().unwrap(PgConnection.class);
 
         // I initialize the holders and I start to listen.
         for (Type type : Type.values()) {

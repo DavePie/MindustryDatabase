@@ -28,13 +28,13 @@ dependencies {
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation libs.sqids
 }
 
 test {
     useJUnitPlatform()
     systemProperty "org.jooq.no-logo", true
     systemProperty "org.jooq.no-tips", true
-    maxParallelForks = 8
 }
 
 java {
@@ -115,4 +115,8 @@ tasks.register("updateDatabase") {
     exec {
         commandLine "psql", "mindustry_database", "-f", "tables.sql"
     }
+}
+
+tasks.named("test") {
+    dependsOn("updateDatabase")
 }

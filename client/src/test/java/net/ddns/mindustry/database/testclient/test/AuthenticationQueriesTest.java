@@ -1,41 +1,48 @@
-package net.ddns.mindustry.database.testclient;
+package net.ddns.mindustry.database.testclient.test;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.AccountQueries.*;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import static net.ddns.mindustry.database.client.AccountQueries.SignupStatus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.SAME_THREAD) // I need the execution order for this test.
 public final class AuthenticationQueriesTest {
 
-    private static Database db;
+    private final Database db;
+    private final MockAccount account;
 
-    @BeforeAll
-    static void initialize() {
-        db = DbInitialization.clearAndConnect(2);
+    public AuthenticationQueriesTest() {
+        this.db = DbInitialization.newConnection(2);
+        this.account = MockAccount.random();
     }
 
     @AfterAll
-    static void close() {
-        if (db != null) db.close();
+    void close() throws Exception {
+        db.close();
     }
 
     @Test
     @Order(1)
     void signup() {
 
-        final var mock = MockAccount.instance();
         final AccountQueries.SignupStatus status = db.account().signup(
-                mock.username(), mock.password(),
-                mock.ip(), mock.uuid(), Duration.ofHours(1));
+                account.username(),
+                account.password().clone(),
+                account.ip(),
+                account.uuid(),
+                Duration.ofHours(1));
 
         assertInstanceOf(Created.class, status, "The account did not get created: " + status);
     }
@@ -43,8 +50,7 @@ public final class AuthenticationQueriesTest {
     @Test
     @Order(2)
     void logout() {
-        final var mock = MockAccount.instance();
-        final Account account = db.account().find(mock.username()).orElse(null);
+        final Account account = db.account().find(this.account.username()).orElse(null);
         assertNotNull(account, "The account is not available.");
         db.account().logout(account);
     }
@@ -53,9 +59,12 @@ public final class AuthenticationQueriesTest {
     @Order(3)
     void login() {
 
-        final var mock = MockAccount.instance();
-        final AccountQueries.LoginStatus login = db.account()
-                .login(mock.username(), mock.password(), mock.ip(), mock.uuid(), Duration.ofHours(1));
+        final AccountQueries.LoginStatus login = db.account().login(
+                account.username(),
+                account.password().clone(),
+                account.ip(),
+                account.uuid(),
+                Duration.ofHours(1));
 
         assertInstanceOf(LoginStatus.LoggedIn.class, login, "Could not login into the account: " + login);
     }
@@ -88,7 +97,7 @@ public final class AuthenticationQueriesTest {
         final String ip = "12.0.0.";
         final var mock = MockAccount.instance();
         // I do this because the password is cleared and deleted.
-        final Supplier<char[]> password = () -> Arrays.copyOf(mock.password(), mock.password().length);
+        final Supplier<char[]> password = mock.password()::clone;
         final Duration session = Duration.ofHours(1);
 
         // I create the test accounts.
@@ -103,6 +112,8 @@ public final class AuthenticationQueriesTest {
                 db.account().logout(account);
                 accounts[i] = account;
             }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not close the database connection", e);
         }
         // The last 3 accounts are innocent, those will be used to verify if unlinked accounts are also retrieved.
         /*

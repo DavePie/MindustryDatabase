@@ -1,7 +1,6 @@
 package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.*;
-import org.jooq.CloseableDSLContext;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.jooq.postgres.extensions.types.Inet;
@@ -9,13 +8,16 @@ import org.jspecify.annotations.NullMarked;
 import org.postgresql.Driver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Objects;
 
 @NullMarked
 public final class DatabaseImpl implements Database {
 
-    private final CloseableDSLContext dsl;
+    private final Connection connection;
+    private final DSLContext dsl;
     private final SecurityConfig config;
     private final AccountQueriesImpl auth;
     private final ServerQueriesImpl server;
@@ -23,19 +25,11 @@ public final class DatabaseImpl implements Database {
     private final PunishmentQueriesImpl punishment;
     private final RoleQueriesImpl role;
     private final AppealQueriesImpl appeal;
-    private final DatabaseEventsImpl punishmentListeners;
+    private final DatabaseEventsImpl databaseEvents;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
-
-        try { Class.forName(Driver.class.getName());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("The database driver could not be loaded.", e);
-        }
-
-        this.dsl = DSL.using(Objects.requireNonNull(url),
-                Objects.requireNonNull(username),
-                password);
-
+        this.connection = newConnection(url, username, password);
+        this.dsl = DSL.using(this.connection);
         this.config = Objects.requireNonNull(config);
         this.auth = new AccountQueriesImpl(this);
         this.server = new ServerQueriesImpl(this);
@@ -44,9 +38,28 @@ public final class DatabaseImpl implements Database {
         this.role = new RoleQueriesImpl(this);
         this.appeal = new AppealQueriesImpl(this);
         // Must be last since it uses the classes above during initialization.
-        try { this.punishmentListeners = new DatabaseEventsImpl(this);
+        try { this.databaseEvents = new DatabaseEventsImpl(this);
         } catch (SQLException e) {
-            throw new RuntimeException("Could not start the punishment lister task.", e);
+            throw new RuntimeException("Could not start the database event listener task.", e);
+        }
+    }
+
+    private static Connection newConnection(String url, String username, String password) {
+
+        Objects.requireNonNull(url);
+        Objects.requireNonNull(username);
+
+        try { Class.forName(Driver.class.getName());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("The database driver could not be loaded.", e);
+        }
+
+        try {
+            final var con = DriverManager.getConnection(url, username, password);
+            con.setAutoCommit(false); // TODO Fix code that does not use transactions.
+            return con;
+        } catch (SQLException e) {
+            throw new IllegalArgumentException("Could not open a connection with the database.", e);
         }
     }
 
@@ -56,6 +69,10 @@ public final class DatabaseImpl implements Database {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("The provided IP address is invalid.", e);
         }
+    }
+
+    public Connection connection() {
+        return connection;
     }
 
     public DSLContext dsl() {
@@ -99,12 +116,12 @@ public final class DatabaseImpl implements Database {
 
     @Override
     public DatabaseEventsImpl events() {
-        return punishmentListeners;
+        return databaseEvents;
     }
 
     @Override
-    public void close() {
-        punishmentListeners.close();
-        dsl.close();
+    public void close() throws Exception {
+        databaseEvents.close();
+        connection.close();
     }
 }
