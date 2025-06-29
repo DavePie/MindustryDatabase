@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 
 public final class DbInitialization {
@@ -35,14 +34,7 @@ public final class DbInitialization {
                 .argon2Memory(20)
                 .argon2Parallelism(2)
                 .accountLimit(accountLimit);
-
-        final SecurityConfig securityConfig;
-        try { securityConfig = builder.build();
-        } catch (NoSuchAlgorithmException e) {
-            Assertions.fail("Missing default hash algorithm", e);
-            throw new IllegalStateException();
-        }
-        return Database.newConnection(url, user, pass, securityConfig);
+        return Database.newConnection(url, user, pass, builder.build());
     }
 
     private DbInitialization() {}

@@ -1,11 +1,13 @@
 package net.ddns.mindustry.database.testclient.test;
 
+import net.ddns.mindustry.database.client.AppealQueries;
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.util.AccountUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -48,6 +50,20 @@ public final class AppealTest {
         Assertions.assertEquals(appeal.id(), db.appeal().openAccountAppeals(user).getFirst().id());
         Assertions.assertEquals(1, db.appeal().openAccountAppealsCount(user));
     }
+
+    @Test
+    void appealRateLimit() {
+        final String message = "Some random message";
+        final var user = AccountUtil.signupAssertive(db, MockAccount.random());
+        Assertions.assertInstanceOf(Ok.class, db.appeal().appeal(user, message));
+        Assertions.assertInstanceOf(AppealQueries.Status.RateLimited.class, db.appeal().appeal(user, message));
+   }
+
+   @Test
+   void appealEmptyMessage() {
+       final var user = AccountUtil.signupAssertive(db, MockAccount.random());
+       Assertions.assertInstanceOf(AppealQueries.Status.EmptyMessage.class, db.appeal().appeal(user, "      "));
+   }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#appeals")
