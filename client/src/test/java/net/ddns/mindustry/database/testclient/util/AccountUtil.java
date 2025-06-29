@@ -2,7 +2,9 @@ package net.ddns.mindustry.database.testclient.util;
 
 import net.ddns.mindustry.database.client.AccountQueries;
 import net.ddns.mindustry.database.client.Database;
+import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
+import org.junit.jupiter.api.Assertions;
 import java.time.Duration;
 import java.util.Objects;
 
@@ -19,6 +21,11 @@ public final class AccountUtil {
                 account.ip(),
                 account.uuid(),
                 DEFAULT);
+    }
+
+    /// Creates the account and asserts it was created.
+    public static Account signupAssertive(Database database, MockAccount account) {
+        return Assertions.assertInstanceOf(AccountQueries.SignupStatus.Created.class, signup(database, account)).account();
     }
 
     public static AccountQueries.LoginStatus login(Database database, MockAccount account) {

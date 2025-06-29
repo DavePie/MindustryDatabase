@@ -3,9 +3,12 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Appeal;
 import net.ddns.mindustry.database.schema.tables.pojos.AppealReply;
+import org.jspecify.annotations.NullMarked;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
+@NullMarked
 public interface AppealQueries {
 
     Optional<Appeal> findAppeal(long uid);
@@ -14,7 +17,7 @@ public interface AppealQueries {
 
     Status appeal(Account account, String message);
 
-    void replyToAppeal(Appeal appeal, Account account, String message, boolean acceptAppeal);
+    AppealReply replyToAppeal(Appeal appeal, Account staff, String message, boolean acceptAppeal);
 
     void deleteAppeal(Appeal appeal);
 
@@ -38,5 +41,13 @@ public interface AppealQueries {
 
     int openAccountAppealsCount(Account account);
 
-    enum Status { OK, EMPTY_MESSAGE, RATE_LIMITED }
+    interface Status {
+        record Ok(Appeal appeal) implements Status {
+            public Ok {
+                Objects.requireNonNull(appeal);
+            }
+        }
+        record EmptyMessage() implements Status {}
+        record RateLimited() implements Status {}
+    }
 }

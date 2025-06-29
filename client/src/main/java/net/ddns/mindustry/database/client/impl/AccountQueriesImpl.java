@@ -9,6 +9,8 @@ import org.jooq.postgres.extensions.types.Inet;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.*;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -18,7 +20,31 @@ import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
-public record AccountQueriesImpl(DatabaseImpl database) implements AccountQueries {
+public final class AccountQueriesImpl implements AccountQueries {
+
+    private final DatabaseImpl database;
+    private final MessageDigest digest;
+
+    public AccountQueriesImpl(DatabaseImpl database, MessageDigest digest) {
+        this.database = database;
+        this.digest = digest;
+    }
+
+    public AccountQueriesImpl(DatabaseImpl database) {
+        this(database, newDigest(database));
+    }
+
+    private static MessageDigest newDigest(DatabaseImpl database) {
+
+        final String algorithm = database
+                .securityConfig()
+                .hashAlgorithm();
+
+        try { return MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException("Invalid algorithm: " + algorithm, e);
+        }
+    }
 
     /// Adds a new Login entry and creates a new session if not present,
     /// else updates the previous one with the new information.
@@ -145,10 +171,11 @@ public record AccountQueriesImpl(DatabaseImpl database) implements AccountQuerie
     public byte[] createSessionHash(String ip, String uuid) {
         Objects.requireNonNull(ip);
         Objects.requireNonNull(uuid);
-        return database()
-                .securityConfig()
-                .sessionDigest()
-                .digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
+        // The Message digest cannot be re-used within different threads.
+        final MessageDigest digest = this.digest;
+        synchronized (digest) {
+            return digest.digest((ip + uuid).getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     /// @return the account id, if the session is present and not expired, or else, the empty optional.
@@ -311,5 +338,29 @@ public record AccountQueriesImpl(DatabaseImpl database) implements AccountQuerie
             security.argon2().wipeArray(oldPassword);
             security.argon2().wipeArray(newPassword);
         }
+    }
+
+    public DatabaseImpl database() {
+        return database;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (!(obj instanceof AccountQueriesImpl that)) return false;
+        return Objects.equals(this.database, that.database) &&
+                Objects.equals(this.digest, that.digest);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(database, digest);
+    }
+
+    @Override
+    public String toString() {
+        return "AccountQueriesImpl[" +
+                "database=" + database + ", " +
+                "digest=" + digest + ']';
     }
 }

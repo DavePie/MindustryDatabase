@@ -3,8 +3,6 @@ package net.ddns.mindustry.database.client;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.jspecify.annotations.NullMarked;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Objects;
 
@@ -12,7 +10,7 @@ import java.util.Objects;
 @NullMarked
 public record SecurityConfig(
         SecureRandom random,
-        MessageDigest sessionDigest,
+        String hashAlgorithm,
         Argon2 argon2,
         int argon2Iteration,
         int argon2Memory,
@@ -22,7 +20,7 @@ public record SecurityConfig(
 
     public SecurityConfig {
         Objects.requireNonNull(random);
-        Objects.requireNonNull(sessionDigest);
+        Objects.requireNonNull(hashAlgorithm);
         Objects.requireNonNull(argon2);
         if (minimumPasswordLength <= 0) throw new IllegalArgumentException("The minimum password length cannot be 0 or negative.");
         if (accountLimit <= 0) throw new IllegalArgumentException("The account limit cannot be 0 or negative.");
@@ -30,16 +28,16 @@ public record SecurityConfig(
 
     public SecurityConfig(
             SecureRandom random,
-            String sessionAlgorithm,
+            String hashAlgorithm,
             int saltLength,
             int hashLength,
             int argon2Iteration,
             int argon2Memory,
             int argon2Parallelism,
             int minimumPasswordLength,
-            int accountsLimit) throws NoSuchAlgorithmException {
+            int accountsLimit) {
         this(random,
-                MessageDigest.getInstance(Objects.requireNonNull(sessionAlgorithm)),
+                hashAlgorithm,
                 // ARGON2id by default.
                 Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, saltLength, hashLength),
                 argon2Iteration,
@@ -117,7 +115,7 @@ public record SecurityConfig(
             return this;
         }
 
-        public SecurityConfig build() throws NoSuchAlgorithmException {
+        public SecurityConfig build() {
             return new SecurityConfig(
                     random,
                     sessionAlgorithm,

@@ -37,7 +37,7 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
 
         Objects.requireNonNull(account);
         Objects.requireNonNull(message);
-        if (message.isBlank()) return Status.EMPTY_MESSAGE;
+        if (message.isBlank()) return new Status.EmptyMessage();
 
         final boolean rateLimited = latestAccountAppeal(account)
                 .map(Appeal::creationDate)
@@ -47,7 +47,7 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
                 .map(duration -> duration.toHours() < 6)
                 .orElse(false);
 
-        if (rateLimited) return Status.RATE_LIMITED;
+        if (rateLimited) return new Status.RateLimited();
         for (int i = 0; i < 100; i++) {
 
             final long uid = database()
@@ -55,20 +55,21 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
                     .random()
                     .nextLong();
 
-            final boolean inserted = database().dsl()
+            final Appeal inserted = database().dsl()
                     .insertInto(APPEAL)
                     .set(APPEAL.UID, uid)
                     .set(APPEAL.ACCOUNT_ID, account.id())
                     .set(APPEAL.MESSAGE, message)
                     .onConflictDoNothing()
-                    .execute() == 1;
-            if (inserted) return Status.OK;
+                    .returningResult()
+                    .fetchOneInto(Appeal.class);
+            if (inserted != null) return new Status.Ok(inserted);
         }
         throw new IllegalStateException("Could not insert the appeal with an unique uid.");
     }
 
     @Override
-    public void replyToAppeal(Appeal appeal, Account account, String message, boolean acceptAppeal) {
+    public AppealReply replyToAppeal(Appeal appeal, Account staff, String message, boolean acceptAppeal) {
         for (int i = 0; i < 100; i++) {
 
             final long uid = database()
@@ -76,15 +77,17 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
                     .random()
                     .nextLong();
 
-            final boolean inserted = database().dsl()
+            final AppealReply inserted = database().dsl()
                     .insertInto(APPEAL_REPLY)
                     .set(APPEAL_REPLY.UID, uid)
                     .set(APPEAL_REPLY.APPEAL_ID, appeal.id())
+                    .set(APPEAL_REPLY.STAFF_ID, staff.id())
                     .set(APPEAL_REPLY.MESSAGE, message)
                     .set(APPEAL_REPLY.ACCEPTED, acceptAppeal)
                     .onConflictDoNothing()
-                    .execute() == 1;
-            if (inserted) return;
+                    .returningResult()
+                    .fetchOneInto(AppealReply.class);
+            if (inserted != null) return inserted;
         }
         throw new IllegalStateException("Could not insert the appeal with an unique uid.");
     }

@@ -2,7 +2,7 @@ package net.ddns.mindustry.database.testclient.data;
 
 import java.util.stream.Stream;
 
-public final class MockPunishment {
+public final class MockMessages {
 
     public static Stream<String> reasons() {
         return Stream.of("cuz",
@@ -35,5 +35,13 @@ public final class MockPunishment {
                         I rest my case, confident that you will uphold justice and find the defendant guilty of these serious charges. Thank you.
                         """,
                 "got bored");
+    }
+
+    public static Stream<String> appeals() {
+        return Stream.of("I left the computer and the dog started to grief!",
+                "I was bored",
+                "I didn't do anything!",
+                "I'm sorry...",
+                "Uhm");
     }
 }

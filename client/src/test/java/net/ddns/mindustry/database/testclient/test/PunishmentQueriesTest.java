@@ -48,7 +48,7 @@ public final class PunishmentQueriesTest {
     }
 
     @ParameterizedTest
-    @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
+    @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void ban(String reason) {
 
         final var queue = new LinkedBlockingQueue<Integer>();
@@ -65,7 +65,7 @@ public final class PunishmentQueriesTest {
     }
 
     @ParameterizedTest
-    @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
+    @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void kick(String reason) {
 
         final var queue = new LinkedBlockingQueue<Integer>();
@@ -83,7 +83,7 @@ public final class PunishmentQueriesTest {
     }
 
     @ParameterizedTest
-    @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
+    @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void warn(String reason) {
 
         final var queue = new LinkedBlockingQueue<Integer>();
@@ -101,7 +101,7 @@ public final class PunishmentQueriesTest {
     }
 
     @ParameterizedTest
-    @MethodSource("net.ddns.mindustry.database.testclient.data.MockPunishment#reasons")
+    @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void mute(String reason) {
 
         final var queue = new LinkedBlockingQueue<Integer>();
