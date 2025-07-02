@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.IntConsumer;
+import java.util.function.Consumer;
 
 @NullMarked
 public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
@@ -56,7 +56,7 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
     }
 
     private void notificationListener() {
-        if (Thread.interrupted()) return; // The close() method has been called.
+        if (Thread.currentThread().isInterrupted()) return; // The close() method has been called.
         try {
             // Unfortunately, I'm forced to do this; else the notifications will not get updated.
             database.dsl().selectOne().execute();
@@ -66,11 +66,10 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
             for (var notification : notifications) {
                 final Type channel = typeFromChannel(notification.getName());
                 final int id = Integer.parseInt(notification.getParameter());
-                trigger(channel, id);
+                onEvent(channel, id);
             }
         } catch (NumberFormatException | SQLException e) {
-            System.out.println("exception: " + e);
-            // TODO Cannot handle it in any way unless with a log.
+            onFailure(e);
         }
     }
 
@@ -78,10 +77,12 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
     public void close() {
         notificationThread.cancel(true);
         executor.shutdown();
+        // I unlisten on all channels.
+        database.dsl().execute("UNLISTEN *;");
     }
 
     @Override
-    public void register(Type type, IntConsumer listener) {
+    public void register(Type type, Consumer<Event> listener) {
 
         Objects.requireNonNull(type);
         Objects.requireNonNull(listener);
@@ -96,7 +97,7 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
     }
 
     @Override
-    public void unregister(Type type, IntConsumer listener) {
+    public void unregister(Type type, Consumer<Event> listener) {
 
         Objects.requireNonNull(type);
         Objects.requireNonNull(listener);
@@ -110,13 +111,13 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
         }
     }
 
-    private void trigger(Type type, int value) {
+    private void trigger(Holder holder, Event event) {
 
-        Objects.requireNonNull(type);
-        final var holder = listeners.get(type);
+        Objects.requireNonNull(holder);
+        Objects.requireNonNull(event);
 
         // A copy to avoid the concurrent modification exception.
-        final List<IntConsumer> copy;
+        final List<Consumer<Event>> copy;
         holder.locks().readLock().lock();
         try {
             copy = Collections.unmodifiableList(holder.listeners());
@@ -124,11 +125,25 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
             holder.locks().readLock().unlock();
         }
         for (var listener : copy) {
-            Thread.ofVirtual().start(() -> listener.accept(value));
+            Thread.ofVirtual().start(() -> listener.accept(event));
         }
     }
 
-    private record Holder(ArrayList<IntConsumer> listeners, ReentrantReadWriteLock locks) {
+    private void onEvent(Type type, int id) {
+        Objects.requireNonNull(type);
+        final var holder = listeners.get(type);
+        trigger(holder, new Event.Value(id));
+    }
+
+    private void onFailure(Exception exception) {
+        Objects.requireNonNull(exception);
+        final Collection<Holder> holders = listeners.values();
+        for (var holder : holders) {
+            trigger(holder, new Event.Failure(exception));
+        }
+    }
+
+    private record Holder(ArrayList<Consumer<Event>> listeners, ReentrantReadWriteLock locks) {
         private Holder() {
             this(new ArrayList<>(), new ReentrantReadWriteLock());
         }
