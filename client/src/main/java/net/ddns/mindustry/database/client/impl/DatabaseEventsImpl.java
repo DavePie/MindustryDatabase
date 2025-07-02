@@ -117,30 +117,32 @@ public final class DatabaseEventsImpl implements DatabaseEvents, AutoCloseable {
         Objects.requireNonNull(event);
 
         // A copy to avoid the concurrent modification exception.
-        final List<Consumer<Event>> copy;
         holder.locks().readLock().lock();
         try {
-            copy = Collections.unmodifiableList(holder.listeners());
+            for (var listener : holder.listeners) {
+                Thread.ofVirtual().start(() -> listener.accept(event));
+            }
         } finally {
             holder.locks().readLock().unlock();
-        }
-        for (var listener : copy) {
-            Thread.ofVirtual().start(() -> listener.accept(event));
         }
     }
 
     private void onEvent(Type type, int id) {
         Objects.requireNonNull(type);
         final var holder = listeners.get(type);
-        trigger(holder, new Event.Value(id));
+        // I avoid blocking the Thread that listen for notifications.
+        Thread.ofVirtual().start(() -> trigger(holder, new Event.Value(id)));
     }
 
     private void onFailure(Exception exception) {
         Objects.requireNonNull(exception);
         final Collection<Holder> holders = listeners.values();
-        for (var holder : holders) {
-            trigger(holder, new Event.Failure(exception));
-        }
+        // I avoid blocking the Thread that listen for notifications.
+        Thread.ofVirtual().start(() -> {
+            for (var holder : holders) {
+                trigger(holder, new Event.Failure(exception));
+            }
+        });
     }
 
     private record Holder(ArrayList<Consumer<Event>> listeners, ReentrantReadWriteLock locks) {

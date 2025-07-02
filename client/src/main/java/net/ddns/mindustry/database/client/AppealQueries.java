@@ -41,7 +41,7 @@ public interface AppealQueries {
 
     int openAccountAppealsCount(Account account);
 
-    interface Status {
+    sealed interface Status {
         record Ok(Appeal appeal) implements Status {
             public Ok {
                 Objects.requireNonNull(appeal);

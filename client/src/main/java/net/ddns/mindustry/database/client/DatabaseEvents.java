@@ -11,7 +11,7 @@ public interface DatabaseEvents {
 
     void unregister(Type type, Consumer<Event> listener);
 
-    interface Event {
+    sealed interface Event {
 
         record Value(int id) implements Event {}
 

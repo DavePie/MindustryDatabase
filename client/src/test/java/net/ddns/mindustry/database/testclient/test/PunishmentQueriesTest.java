@@ -4,11 +4,11 @@ import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import net.ddns.mindustry.database.schema.tables.pojos.*;
 import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
 import net.ddns.mindustry.database.testclient.data.MockServer;
 import net.ddns.mindustry.database.testclient.util.AccountUtil;
+import net.ddns.mindustry.database.testclient.util.EventCycle;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -16,18 +16,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
 import static net.ddns.mindustry.database.client.AccountQueries.SignupStatus.Created;
-import static net.ddns.mindustry.database.client.DatabaseEvents.Event;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Execution(ExecutionMode.CONCURRENT)
 public final class PunishmentQueriesTest {
 
+    private final Duration eventTimeout = Duration.of(5, ChronoUnit.SECONDS);
     private final Database db;
     private final Account punished;
-    private final Account staff;
+    private final PunishmentQueries.Issuer staff;
 
     public PunishmentQueriesTest() {
 
@@ -39,7 +37,8 @@ public final class PunishmentQueriesTest {
         final var server = MockServer.instance();
 
         this.punished = Assertions.assertInstanceOf(Created.class, AccountUtil.signup(db, mock1)).account();
-        this.staff    = Assertions.assertInstanceOf(Created.class, AccountUtil.signup(db, mock2)).account();
+        final Account staff = Assertions.assertInstanceOf(Created.class, AccountUtil.signup(db, mock2)).account();
+        this.staff = PunishmentQueries.Issuer.of(staff);
         db.server().add(server.ip(), server.port(), server.name());
     }
 
@@ -51,71 +50,56 @@ public final class PunishmentQueriesTest {
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void ban(String reason) {
-
-        final var queue = new LinkedBlockingQueue<Event>();
-        final Consumer<Event> listener = queue::add;
-        db.events().register(DatabaseEvents.Type.BAN, listener);
-        final Ban ban = db.punishment().ban(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db), Duration.ofDays(15));
-        Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            while (true) {
-                final Event.Value event = Assertions.assertInstanceOf(Event.Value.class, queue.take());
-                if (event.id() == ban.id()) break;
-            }
-        });
-        db.events().unregister(DatabaseEvents.Type.BAN, listener);
+        EventCycle.verify(db,
+                DatabaseEvents.Type.BAN,
+                () -> db.punishment().ban(punished, staff, reason, MockServer.fromDb(db), Duration.ofDays(15)).id(),
+                eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void kick(String reason) {
-
-        final var queue = new LinkedBlockingQueue<Event>();
-        final Consumer<Event> listener = queue::add;
-        db.events().register(DatabaseEvents.Type.KICK, listener);
-
-        final Kick kick = db.punishment().kick(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db));
-        Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            while (true) {
-                final Event.Value event = Assertions.assertInstanceOf(Event.Value.class, queue.take());
-                if (event.id() == kick.id()) break;
-            }
-        });
-        db.events().unregister(DatabaseEvents.Type.KICK, listener);
+        EventCycle.verify(db,
+                DatabaseEvents.Type.KICK,
+                () -> db.punishment().kick(punished, staff, reason, MockServer.fromDb(db)).id(),
+                eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void warn(String reason) {
-
-        final var queue = new LinkedBlockingQueue<Event>();
-        final Consumer<Event> listener = queue::add;
-        db.events().register(DatabaseEvents.Type.WARN, listener);
-
-        final Warn warn = db.punishment().warn(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db));
-        Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            while (true) {
-                final Event.Value event = Assertions.assertInstanceOf(Event.Value.class, queue.take());
-                if (event.id() == warn.id()) break;
-            }
-        });
-        db.events().unregister(DatabaseEvents.Type.WARN, listener);
+        EventCycle.verify(db,
+                DatabaseEvents.Type.WARN,
+                () -> db.punishment().warn(punished, staff, reason, MockServer.fromDb(db)).id(),
+                eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void mute(String reason) {
+        EventCycle.verify(db,
+                DatabaseEvents.Type.MUTE,
+                () -> db.punishment().mute(punished, staff, reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS)).id(),
+                eventTimeout);
+    }
 
-        final var queue = new LinkedBlockingQueue<Event>();
-        final Consumer<Event> listener = queue::add;
-        db.events().register(DatabaseEvents.Type.MUTE, listener);
+    @RepeatedTest(50)
+    void banStress() {
+        ban("reason");
+    }
 
-        final Mute mute = db.punishment().mute(punished, PunishmentQueries.Issuer.of(staff), reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS));
-        Assertions.assertTimeoutPreemptively(Duration.of(5, ChronoUnit.SECONDS), () -> {
-            while (true) {
-                final Event.Value event = Assertions.assertInstanceOf(Event.Value.class, queue.take());
-                if (event.id() == mute.id()) break;
-            }
-        });
-        db.events().unregister(DatabaseEvents.Type.MUTE, listener);
+    @RepeatedTest(50)
+    void kickStress() {
+        kick("reason");
+    }
+
+    @RepeatedTest(50)
+    void warnStress() {
+        warn("reason");
+    }
+
+    @RepeatedTest(50)
+    void muteStress() {
+        mute("reason");
     }
 }
