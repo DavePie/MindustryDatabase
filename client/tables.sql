@@ -266,13 +266,26 @@ CREATE TABLE IF NOT EXISTS permission(
 
 CREATE TABLE IF NOT EXISTS account_role(
 
-    id         SERIAL PRIMARY KEY,
-    account_id INT    NOT NULL,
-    role_id    INT    NOT NULL,
+    id         SERIAL      PRIMARY KEY,
+    account_id INT         NOT NULL,
+    role_id    INT         NOT NULL,
+    grant_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_roles_user FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE,
     CONSTRAINT u_account_role UNIQUE(account_id, role_id)
+);
+
+CREATE TABLE IF NOT EXISTS account_role_history(
+
+    id          SERIAL      PRIMARY KEY,
+    account_id  INT         NOT NULL,
+    role_id     INT         NOT NULL,
+    grant_date  TIMESTAMPTZ NOT NULL,
+    revoke_date TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT fk_roles_user FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE,
+    CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS role_permission(
