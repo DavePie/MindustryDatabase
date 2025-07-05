@@ -135,11 +135,40 @@ public final class AppealTest {
         final var staff = AccountUtil.signupAssertive(db, MockAccount.random());
 
         final var appeal = Assertions.assertInstanceOf(Ok.class, db.appeal().appeal(user, "Some random appeal message.")).appeal();
-        final var appealReply = db.appeal().replyToAppeal(appeal, staff, "Some random appeal message.", true);
+        final var appealReply = db.appeal().replyToAppeal(appeal, staff, "Some random appeal reply message.", true);
 
         Assertions.assertEquals(0, db.appeal().openAccountAppealsCount(user));
         db.appeal().deleteAppealReply(appealReply);
         // The appeal re-opens since there's no longer any reply.
         Assertions.assertEquals(1, db.appeal().openAccountAppealsCount(user));
+    }
+
+    @Test
+    void findAppeal() {
+
+        final var user  = AccountUtil.signupAssertive(db, MockAccount.random());
+        final var appeal = Assertions.assertInstanceOf(Ok.class, db.appeal().appeal(user, "Some random appeal message.")).appeal();
+
+        final String uid = db.appeal().uidFrom(appeal);
+        final var foundAppeal = db.appeal()
+                .findAppeal(uid)
+                .orElseThrow();
+        Assertions.assertEquals(appeal, foundAppeal);
+    }
+
+    @Test
+    void findAppealReply() {
+
+        final var user  = AccountUtil.signupAssertive(db, MockAccount.random());
+        final var staff = AccountUtil.signupAssertive(db, MockAccount.random());
+
+        final var appeal = Assertions.assertInstanceOf(Ok.class, db.appeal().appeal(user, "Some random appeal message.")).appeal();
+        final var appealReply = db.appeal().replyToAppeal(appeal, staff, "Some random appeal reply message.", true);
+
+        final String uid = db.appeal().uidFrom(appealReply);
+        final var foundReply = db.appeal()
+                .findAppealReply(uid)
+                .orElseThrow();
+        Assertions.assertEquals(appealReply, foundReply);
     }
 }
