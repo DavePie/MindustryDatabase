@@ -1,13 +1,15 @@
 [versions]
-jooq       = "3.19.18"
-postgresql = "42.7.5"
-argon2     = "2.11"
-jna        = "5.16.0"
-jspecify   = "1.0.0"
-sqids   = "0.1.0"
+jooq         = "3.19.18"
+postgresql   = "42.7.5"
+argon2       = "2.11"
+jna          = "5.16.0"
+jspecify     = "1.0.0"
+sqids        = "0.1.0"
+extra-module = "1.12"
 
 [plugins]
-jooqCodegen = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq"}
+jooqCodegen  = { id = "org.jooq.jooq-codegen-gradle"      , version.ref = "jooq"}
+extra-module = { id = "org.gradlex.extra-java-module-info", version.ref = "extra-module"}
 
 [libraries]
 jooq       = { module = "org.jooq:jooq"                    , version.ref = "jooq" }

@@ -25,7 +25,9 @@ public interface PunishmentQueries {
 
     List<Ban> activeBans(Account account);
 
-    Optional<Ban> findBan(long uid);
+    String uidFrom(Ban ban);
+
+    Optional<Ban> findBan(String uid);
 
     Optional<Ban> findBan(int id);
 

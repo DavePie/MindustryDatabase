@@ -11,9 +11,13 @@ import java.util.Optional;
 @NullMarked
 public interface AppealQueries {
 
-    Optional<Appeal> findAppeal(long uid);
+    String uidFrom(Appeal appeal);
 
-    Optional<AppealReply> findAppealReply(long uid);
+    String uidFrom(AppealReply appealReply);
+
+    Optional<Appeal> findAppeal(String uid);
+
+    Optional<AppealReply> findAppealReply(String uid);
 
     Status appeal(Account account, String message);
 

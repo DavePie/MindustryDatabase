@@ -11,7 +11,9 @@ import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @NullMarked
 public final class DatabaseImpl implements Database {
@@ -69,6 +71,27 @@ public final class DatabaseImpl implements Database {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("The provided IP address is invalid.", e);
         }
+    }
+
+    public static boolean isIntWithinLong(long value) {
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+    }
+
+    public String sqidsEncode(int id) {
+        return securityConfig()
+                .sqids()
+                .encode(List.of((long) id));
+    }
+
+    /// @return the integer version of the uid, but in case the uid does not fit inside an int, empty is returned.
+    public Optional<Integer> sqidsDecodeInt(String uid) {
+        Objects.requireNonNull(uid);
+        final var ids = securityConfig()
+                .sqids()
+                .decode(uid);
+        // The id used is an integer, will never take multiple longs to find.
+        if (ids.size() != 1 && DatabaseImpl.isIntWithinLong(ids.getFirst())) return Optional.empty();
+        return Optional.of(Math.toIntExact(ids.getFirst()));
     }
 
     public Connection connection() {

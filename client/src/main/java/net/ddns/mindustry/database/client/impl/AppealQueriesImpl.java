@@ -17,18 +17,36 @@ import static net.ddns.mindustry.database.schema.Tables.APPEAL_REPLY;
 public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries {
 
     @Override
-    public Optional<Appeal> findAppeal(long uid) {
+    public String uidFrom(Appeal appeal) {
+        return database().sqidsEncode(Objects.requireNonNull(appeal).id());
+    }
+
+    @Override
+    public String uidFrom(AppealReply appealReply) {
+        return database().sqidsEncode(Objects.requireNonNull(appealReply).id());
+    }
+
+    @Override
+    public Optional<Appeal> findAppeal(String uid) {
+
+        final var oId = database().sqidsDecodeInt(uid);
+        if (oId.isEmpty()) return Optional.empty();
+
         return database().dsl()
                 .selectFrom(APPEAL)
-                .where(APPEAL.UID.eq(uid))
+                .where(APPEAL.ID.eq(Math.toIntExact(oId.orElseThrow())))
                 .fetchOptionalInto(Appeal.class);
     }
 
     @Override
-    public Optional<AppealReply> findAppealReply(long uid) {
+    public Optional<AppealReply> findAppealReply(String uid) {
+
+        final var oId = database().sqidsDecodeInt(uid);
+        if (oId.isEmpty()) return Optional.empty();
+
         return database().dsl()
                 .selectFrom(APPEAL_REPLY)
-                .where(APPEAL_REPLY.UID.eq(uid))
+                .where(APPEAL_REPLY.ID.eq(oId.orElseThrow()))
                 .fetchOptionalInto(AppealReply.class);
     }
 
@@ -48,48 +66,27 @@ public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries 
                 .orElse(false);
 
         if (rateLimited) return new Status.RateLimited();
-        for (int i = 0; i < 100; i++) {
-
-            final long uid = database()
-                    .securityConfig()
-                    .random()
-                    .nextLong();
-
-            final Appeal inserted = database().dsl()
-                    .insertInto(APPEAL)
-                    .set(APPEAL.UID, uid)
-                    .set(APPEAL.ACCOUNT_ID, account.id())
-                    .set(APPEAL.MESSAGE, message)
-                    .onConflictDoNothing()
-                    .returningResult()
-                    .fetchOneInto(Appeal.class);
-            if (inserted != null) return new Status.Ok(inserted);
-        }
-        throw new IllegalStateException("Could not insert the appeal with an unique uid.");
+        return database().dsl()
+                .insertInto(APPEAL)
+                .set(APPEAL.ACCOUNT_ID, account.id())
+                .set(APPEAL.MESSAGE, message)
+                .returningResult()
+                .fetchOptionalInto(Appeal.class)
+                .map(Status.Ok::new)
+                .orElseThrow();
     }
 
     @Override
     public AppealReply replyToAppeal(Appeal appeal, Account staff, String message, boolean acceptAppeal) {
-        for (int i = 0; i < 100; i++) {
-
-            final long uid = database()
-                    .securityConfig()
-                    .random()
-                    .nextLong();
-
-            final AppealReply inserted = database().dsl()
-                    .insertInto(APPEAL_REPLY)
-                    .set(APPEAL_REPLY.UID, uid)
-                    .set(APPEAL_REPLY.APPEAL_ID, appeal.id())
-                    .set(APPEAL_REPLY.STAFF_ID, staff.id())
-                    .set(APPEAL_REPLY.MESSAGE, message)
-                    .set(APPEAL_REPLY.ACCEPTED, acceptAppeal)
-                    .onConflictDoNothing()
-                    .returningResult()
-                    .fetchOneInto(AppealReply.class);
-            if (inserted != null) return inserted;
-        }
-        throw new IllegalStateException("Could not insert the appeal with an unique uid.");
+        return database().dsl()
+                .insertInto(APPEAL_REPLY)
+                .set(APPEAL_REPLY.APPEAL_ID, appeal.id())
+                .set(APPEAL_REPLY.STAFF_ID, staff.id())
+                .set(APPEAL_REPLY.MESSAGE, message)
+                .set(APPEAL_REPLY.ACCEPTED, acceptAppeal)
+                .returningResult()
+                .fetchOptionalInto(AppealReply.class)
+                .orElseThrow();
     }
 
     @Override

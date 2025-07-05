@@ -3,6 +3,7 @@ package net.ddns.mindustry.database.client;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.jspecify.annotations.NullMarked;
+import org.sqids.Sqids;
 import java.security.SecureRandom;
 import java.util.Objects;
 
@@ -16,7 +17,8 @@ public record SecurityConfig(
         int argon2Memory,
         int argon2Parallelism,
         int minimumPasswordLength,
-        int accountLimit) {
+        int accountLimit,
+        Sqids sqids) {
 
     public SecurityConfig {
         Objects.requireNonNull(random);
@@ -24,6 +26,7 @@ public record SecurityConfig(
         Objects.requireNonNull(argon2);
         if (minimumPasswordLength <= 0) throw new IllegalArgumentException("The minimum password length cannot be 0 or negative.");
         if (accountLimit <= 0) throw new IllegalArgumentException("The account limit cannot be 0 or negative.");
+        Objects.requireNonNull(sqids);
     }
 
     public SecurityConfig(
@@ -35,7 +38,8 @@ public record SecurityConfig(
             int argon2Memory,
             int argon2Parallelism,
             int minimumPasswordLength,
-            int accountsLimit) {
+            int accountsLimit,
+            Sqids sqids) {
         this(random,
                 hashAlgorithm,
                 // ARGON2id by default.
@@ -44,7 +48,8 @@ public record SecurityConfig(
                 argon2Memory,
                 argon2Parallelism,
                 minimumPasswordLength,
-                accountsLimit);
+                accountsLimit,
+                sqids);
     }
 
     public String hashPass(char[] password) {
@@ -62,6 +67,7 @@ public record SecurityConfig(
         private int argon2Parallelism;
         private int minimumPasswordLength = 5;
         private int accountLimit = 5;
+        private Sqids sqids = new Sqids.Builder().build();
 
         private Builder() {}
 
@@ -115,6 +121,11 @@ public record SecurityConfig(
             return this;
         }
 
+        public Builder sqids(Sqids sqids) {
+            this.sqids = Objects.requireNonNull(sqids);
+            return this;
+        }
+
         public SecurityConfig build() {
             return new SecurityConfig(
                     random,
@@ -125,7 +136,8 @@ public record SecurityConfig(
                     argon2Memory,
                     argon2Parallelism,
                     minimumPasswordLength,
-                    accountLimit);
+                    accountLimit,
+                    sqids);
         }
     }
 }

@@ -139,8 +139,6 @@ CREATE TABLE IF NOT EXISTS punishment_issuer(
 CREATE TABLE IF NOT EXISTS ban(
 
     id              SERIAL      PRIMARY KEY,
-    -- Random value used to search for this ban.
-    uid             BIGINT      NOT NULL UNIQUE,
     account_id      INT         NOT NULL,
     issuer_id       INT         NOT NULL,
     server_id       INT         NOT NULL,
@@ -218,7 +216,6 @@ CREATE TABLE IF NOT EXISTS mute(
 CREATE TABLE IF NOT EXISTS appeal(
 
     id            SERIAL      PRIMARY KEY,
-    uid           BIGINT      NOT NULL UNIQUE,
     account_id    INT         NOT NULL,
     message       TEXT        NOT NULL,
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -229,7 +226,6 @@ CREATE TABLE IF NOT EXISTS appeal(
 CREATE TABLE IF NOT EXISTS appeal_reply(
 
     id            SERIAL      PRIMARY KEY,
-    uid           BIGINT      NOT NULL UNIQUE,
     appeal_id     INT         NOT NULL,
     staff_id      INT         NOT NULL,
     accepted      BOOLEAN     NOT NULL,

@@ -6,7 +6,6 @@ import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -16,14 +15,6 @@ import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
 public record PunishmentQueriesImpl(DatabaseImpl database) implements PunishmentQueries {
-
-    private static final SecureRandom RANDOM = new SecureRandom();
-
-    public Optional<Ban> findBan(DSLContext tDsl, long uid) {
-        return tDsl.selectFrom(BAN)
-                .where(BAN.UID.eq(uid))
-                .fetchOptionalInto(Ban.class);
-    }
 
     /// Requires a transaction.
     private PunishmentIssuer retrieveIssuer(DSLContext tDsl, Issuer issuer) {
@@ -69,16 +60,11 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
             final DSLContext tDsl = ctx.dsl();
             final Integer issuerId = retrieveIssuer(tDsl, issuer).id();
 
-            // I generate an unique uuid.
-            long randomUid = RANDOM.nextLong();
-            while (findBan(tDsl, randomUid).isPresent()) randomUid = RANDOM.nextLong();
-
             return tDsl.insertInto(BAN)
                     .set(BAN.ACCOUNT_ID,      punished.id())
                     .set(BAN.ISSUER_ID,       issuerId)
                     .set(BAN.REASON,          reason)
                     .set(BAN.SERVER_ID,       server.id())
-                    .set(BAN.UID,             randomUid)
                     .set(BAN.CREATION_DATE,   creation)
                     .set(BAN.EXPIRATION_DATE, expiration)
                     .returningResult(BAN)
@@ -191,8 +177,21 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
     }
 
     @Override
-    public Optional<Ban> findBan(long uid) {
-        return findBan(database().dsl(), uid);
+    public String uidFrom(Ban ban) {
+        return database().sqidsEncode(Objects.requireNonNull(ban).id());
+    }
+
+    @Override
+    public Optional<Ban> findBan(String uid) {
+
+        Objects.requireNonNull(uid);
+        final var oId = database().sqidsDecodeInt(uid);
+        if (oId.isEmpty()) return Optional.empty();
+
+        return database().dsl()
+                .selectFrom(BAN)
+                .where(BAN.ID.eq(oId.orElseThrow()))
+                .fetchOptionalInto(Ban.class);
     }
 
     @Override
