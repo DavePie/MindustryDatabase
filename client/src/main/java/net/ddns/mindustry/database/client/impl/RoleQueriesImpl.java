@@ -2,15 +2,14 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.RoleQueries;
 import net.ddns.mindustry.database.schema.Tables;
-import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import net.ddns.mindustry.database.schema.tables.pojos.AccountRole;
-import net.ddns.mindustry.database.schema.tables.pojos.Permission;
-import net.ddns.mindustry.database.schema.tables.pojos.Role;
+import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import static net.ddns.mindustry.database.schema.Tables.ACCOUNT_ROLE;
 import static net.ddns.mindustry.database.schema.Tables.ACCOUNT_ROLE_HISTORY;
 
@@ -236,5 +235,26 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
                     .set(ACCOUNT_ROLE_HISTORY.GRANT_DATE, revoked.grantDate())
                     .execute() == 1;
         });
+    }
+
+    @Override
+    public Set<AccountRoleHistory> accountRolesHistory(Account account) {
+        Objects.requireNonNull(account);
+        return database().dsl()
+                .selectFrom(ACCOUNT_ROLE_HISTORY)
+                .where(ACCOUNT_ROLE_HISTORY.ACCOUNT_ID.eq(account.id()))
+                .fetchStreamInto(AccountRoleHistory.class)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<AccountRoleHistory> accountRoleHistory(Account account, Role role) {
+        Objects.requireNonNull(account);
+        Objects.requireNonNull(role);
+        return database().dsl()
+                .selectFrom(ACCOUNT_ROLE_HISTORY)
+                .where(ACCOUNT_ROLE_HISTORY.ACCOUNT_ID.eq(account.id()).and(ACCOUNT_ROLE_HISTORY.ROLE_ID.eq(role.id())))
+                .fetchStreamInto(AccountRoleHistory.class)
+                .collect(Collectors.toSet());
     }
 }

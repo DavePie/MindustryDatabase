@@ -1,11 +1,13 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.schema.tables.pojos.AccountRoleHistory;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @NullMarked
 public interface RoleQueries {
@@ -114,4 +116,8 @@ public interface RoleQueries {
     /// @param role the role to revoke.
     /// @return true if revoked, false if the account did not have the role.
     boolean revokeRole(Account account, Role role);
+
+    Set<AccountRoleHistory> accountRolesHistory(Account account);
+
+    Set<AccountRoleHistory> accountRoleHistory(Account account, Role role);
 }
