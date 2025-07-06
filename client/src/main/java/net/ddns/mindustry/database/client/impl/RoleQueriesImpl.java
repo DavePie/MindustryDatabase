@@ -3,12 +3,16 @@ package net.ddns.mindustry.database.client.impl;
 import net.ddns.mindustry.database.client.RoleQueries;
 import net.ddns.mindustry.database.schema.Tables;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.schema.tables.pojos.AccountRole;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
+import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import static net.ddns.mindustry.database.schema.Tables.ACCOUNT_ROLE;
+import static net.ddns.mindustry.database.schema.Tables.ACCOUNT_ROLE_HISTORY;
 
 @NullMarked
 public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
@@ -19,9 +23,9 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         Objects.requireNonNull(role);
         return database().dsl()
                 .selectOne()
-                .from(Tables.ACCOUNT_ROLE)
-                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())
-                        .and(Tables.ACCOUNT_ROLE.ROLE_ID.eq(role.id())))
+                .from(ACCOUNT_ROLE)
+                .where(ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())
+                        .and(ACCOUNT_ROLE.ROLE_ID.eq(role.id())))
                 .execute() == 1;
     }
 
@@ -41,9 +45,9 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         return database().dsl()
                 .selectOne() // One is enough, even if the account has multiple roles with the same permissions.
                 .from(Tables.ROLE_PERMISSION)
-                .innerJoin(Tables.ACCOUNT_ROLE)
-                .on(Tables.ACCOUNT_ROLE.ROLE_ID.eq(Tables.ROLE_PERMISSION.ROLE_ID)
-                        .and(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())))
+                .innerJoin(ACCOUNT_ROLE)
+                .on(ACCOUNT_ROLE.ROLE_ID.eq(Tables.ROLE_PERMISSION.ROLE_ID)
+                        .and(ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())))
                 .where(Tables.ROLE_PERMISSION.PERMISSION_ID.eq(permission.id()))
                 .execute() == 1;
     }
@@ -87,9 +91,9 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         Objects.requireNonNull(account);
         return database().dsl()
                 .select()
-                .from(Tables.ACCOUNT_ROLE)
-                .innerJoin(Tables.ROLE).on(Tables.ROLE.ID.eq(Tables.ACCOUNT_ROLE.ROLE_ID))
-                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id()))
+                .from(ACCOUNT_ROLE)
+                .innerJoin(Tables.ROLE).on(Tables.ROLE.ID.eq(ACCOUNT_ROLE.ROLE_ID))
+                .where(ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id()))
                 .fetchInto(Role.class);
     }
 
@@ -200,9 +204,9 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         Objects.requireNonNull(role);
 
         return database().dsl()
-                .insertInto(Tables.ACCOUNT_ROLE)
-                .set(Tables.ACCOUNT_ROLE.ACCOUNT_ID, account.id())
-                .set(Tables.ACCOUNT_ROLE.ROLE_ID, role.id())
+                .insertInto(ACCOUNT_ROLE)
+                .set(ACCOUNT_ROLE.ACCOUNT_ID, account.id())
+                .set(ACCOUNT_ROLE.ROLE_ID, role.id())
                 .onConflictDoNothing()
                 .execute() == 1;
     }
@@ -213,10 +217,24 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         Objects.requireNonNull(account);
         Objects.requireNonNull(role);
 
-        return database().dsl()
-                .deleteFrom(Tables.ACCOUNT_ROLE)
-                .where(Tables.ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())
-                        .and(Tables.ACCOUNT_ROLE.ROLE_ID.eq(role.id())))
-                .execute() == 1;
+        return database().dsl().transactionResult(ctx -> {
+
+            final DSLContext tDsl = ctx.dsl();
+
+            final AccountRole revoked = tDsl.deleteFrom(ACCOUNT_ROLE)
+                    .where(ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id())
+                            .and(ACCOUNT_ROLE.ROLE_ID.eq(role.id())))
+                    .returningResult()
+                    .fetchOptionalInto(AccountRole.class)
+                    .orElse(null);
+            // In case the role has already been revoked or the user never had it.
+            if (revoked == null) return false;
+
+            return tDsl.insertInto(ACCOUNT_ROLE_HISTORY)
+                    .set(ACCOUNT_ROLE_HISTORY.ACCOUNT_ID, revoked.accountId())
+                    .set(ACCOUNT_ROLE_HISTORY.ROLE_ID, revoked.roleId())
+                    .set(ACCOUNT_ROLE_HISTORY.GRANT_DATE, revoked.grantDate())
+                    .execute() == 1;
+        });
     }
 }

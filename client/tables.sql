@@ -282,7 +282,7 @@ CREATE TABLE IF NOT EXISTS account_role_history(
     account_id  INT         NOT NULL,
     role_id     INT         NOT NULL,
     grant_date  TIMESTAMPTZ NOT NULL,
-    revoke_date TIMESTAMPTZ NOT NULL,
+    revoke_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_roles_user FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE,
     CONSTRAINT fk_roles_role FOREIGN KEY(role_id)    REFERENCES role(id)    ON DELETE CASCADE
