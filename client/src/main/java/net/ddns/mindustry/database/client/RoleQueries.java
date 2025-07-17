@@ -14,30 +14,16 @@ public interface RoleQueries {
 
     /// Checks if this account has the role.
     /// @param account the account to check.
-    /// @param role the role to check against.
-    /// @return true if this account has the provided role, false otherwise.
-    boolean hasRole(Account account, Role role);
-
-    /// Check if this account has the role.
-    /// @param account the account to check.
-    /// @param roleName the name of the role to check against.
-    /// @return true if this account has the provided role,
-    ///  false if the role was not found, or the user does not have it.
-    boolean hasRole(Account account, String roleName);
+    /// @param roles the roles to check against.
+    /// @return true if this account has the provided roles, false otherwise.
+    boolean hasRoles(Account account, Role... roles);
 
     /// Check if this account has the permission.\
     /// It doesn't matter which role has the permission; as long as the account has it, true is returned.
     /// @param account the account to check.
-    /// @param permission the permission to check against.
-    /// @return true if this account has the provided permission, false otherwise.
-    boolean hasPermission(Account account, Permission permission);
-
-    /// Check if this account has the permission.\
-    /// It doesn't matter which role has the permission; as long as the account has it, true is returned.
-    /// @param account the account to check.
-    /// @param permission the permission property to check against.
-    /// @return true if this account has the provided permission, false if the permission was not found, or the user does not have it.
-    boolean hasPermission(Account account, String permission);
+    /// @param permissions the permissions to check against.
+    /// @return true if this account has the provided permissions, false otherwise.
+    boolean hasPermissions(Account account, Permission... permissions);
 
     /// Searches the role via its name.
     /// @param name the name of the role to search.
@@ -71,7 +57,7 @@ public interface RoleQueries {
     /// Deletes the permission by its property, all links associated with the permission are also deleted.
     /// @param permission the property of the permission to delete.
     /// @return true if the permission has been deleted, false if not found.
-    boolean deletePermission(String permission);
+    boolean deletePermission(Permission permission);
 
     /// Creates a new role given the provided information.
     /// @param name the name of the role.
@@ -94,28 +80,28 @@ public interface RoleQueries {
     void deleteRole(Role role);
 
     /// Assigns the wanted permission to the role.
-    /// @param permission the permission to link.
     /// @param role the role that will receive the permission.
-    /// @return true if the link has been created, false if already linked.
-    boolean linkPermission(Permission permission, Role role);
+    /// @param permissions the permission to link.
+    /// @return the number of permissions linked, if less than the permission length, some permission were already linked.
+    int linkPermissions(Role role, Permission... permissions);
 
     /// Removes the wanted permission from the role.
-    /// @param permission the permission to unlink.
     /// @param role the role to remove the permission from.
-    /// @return true if the link has been deleted, false if the role did not have the permission.
-    boolean unlinkPermission(Permission permission, Role role);
+    /// @param permissions the permission to unlink.
+    /// @return the number of permissions linked, if less than the permission length, some permission were already not linked.
+    int unlinkPermissions(Role role, Permission... permissions);
 
     /// Grants to the provided account the role.
     /// @param account the account to grant the role to.
-    /// @param role the role to grant.
-    /// @return true if granted, false if already granted.
-    boolean grantRole(Account account, Role role);
+    /// @param roles the role to grant.
+    /// @return the number of roles granted, if less than the roles length, some roles were already granted.
+    int grantRoles(Account account, Role... roles);
 
     /// Revokes the role from the provided account.
     /// @param account the account to revoke the role from.
-    /// @param role the role to revoke.
-    /// @return true if revoked, false if the account did not have the role.
-    boolean revokeRole(Account account, Role role);
+    /// @param roles the role to revoke.
+    /// @return the number of roles revoked, if less than the roles length, some roles were already not granted.
+    int revokeRoles(Account account, Role... roles);
 
     Set<AccountRoleHistory> accountRolesHistory(Account account);
 
