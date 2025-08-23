@@ -27,7 +27,7 @@ class RevokeRole(handler: CommandHandler) : RoleCommand(handler) {
             return
         }
 
-        database!!.role().revokeRole(account.get(), role.get())
+        database!!.role().revokeRoles(account.get(), role.get())
         Log.info("Role revoked.")
     }
 }

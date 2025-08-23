@@ -27,7 +27,7 @@ class GrantRole(handler: CommandHandler) : RoleCommand(handler) {
             return
         }
 
-        database!!.role().grantRole(account.get(), role.get())
+        database!!.role().grantRoles(account.get(), role.get())
         Log.info("Role granted.")
     }
 }
