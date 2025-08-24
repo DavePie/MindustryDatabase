@@ -55,6 +55,6 @@ public final class RoleTest {
                 .stream()
                 .map(Role::name)
                 .collect(Collectors.toSet());
-        Assertions.assertTrue(roles.contains(ROLE1));
+        Assertions.assertTrue(roles.contains(ROLE2));
     }
 }

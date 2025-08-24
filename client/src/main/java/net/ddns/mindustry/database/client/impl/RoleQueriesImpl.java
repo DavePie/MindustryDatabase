@@ -83,9 +83,10 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         return database().dsl().transactionResult(ctx -> ctx.dsl()
                 .select()
                 .from(ACCOUNT_ROLE)
-                .innerJoin(Tables.ROLE).on(Tables.ROLE.ID.eq(ACCOUNT_ROLE.ROLE_ID))
+                .innerJoin(ROLE).on(ROLE.ID.eq(ACCOUNT_ROLE.ROLE_ID))
                 .where(ACCOUNT_ROLE.ACCOUNT_ID.eq(account.id()))
-                .fetchInto(Role.class));
+                .fetchInto(ROLE) // I specify which table I want for the mapping.
+                .into(Role.class));
     }
 
     @Override
