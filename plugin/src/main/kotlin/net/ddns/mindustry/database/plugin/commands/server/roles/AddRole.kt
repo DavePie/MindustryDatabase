@@ -20,7 +20,7 @@ class AddRole(handler: CommandHandler) : BaseRoleCommand(handler) {
 
         val result = database!!.role().newRole(roleName, roleColor, roleSymbol, priority)
 
-        if (!result) {
+        if (result.isEmpty) {
             Log.err("Failed to create the new role.")
             return;
         }

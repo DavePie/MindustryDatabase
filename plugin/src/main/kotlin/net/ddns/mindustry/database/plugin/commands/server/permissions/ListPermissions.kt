@@ -42,7 +42,7 @@ class ListPermissions(handler: CommandHandler) : BasePermissionCommand(handler) 
 
     private fun logPermissions(permissions: List<Permission>) {
         for (permission in permissions) {
-            Log.info("- @ (@): (@) @", permission.id, permission.property)
+            Log.info("- (@) @", permission.id, permission.property)
         }
     }
 }
