@@ -203,6 +203,14 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
     }
 
     @Override
+    public Optional<Ban> findBan(Account account) {
+        return database().dsl()
+                .selectFrom(BAN)
+                .where(ACCOUNT.ID.eq(account.id()))
+                .fetchOptionalInto(Ban.class);
+    }
+
+    @Override
     public Optional<Kick> findKick(int id) {
         return database().dsl()
                 .selectFrom(KICK)

@@ -29,6 +29,8 @@ public interface PunishmentQueries {
 
     Optional<Ban> findBan(int id);
 
+    Optional<Ban> findBan(Account account);
+
     Optional<Kick> findKick(int id);
 
     Optional<Warn> findWarn(int id);
