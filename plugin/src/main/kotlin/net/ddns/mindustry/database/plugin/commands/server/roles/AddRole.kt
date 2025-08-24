@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 
-class AddRole(handler: CommandHandler) : RoleCommand(handler) {
+class AddRole(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
         init {
             description = "Adds a role to the database."

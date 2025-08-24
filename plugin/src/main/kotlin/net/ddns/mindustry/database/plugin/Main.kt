@@ -4,8 +4,11 @@ import arc.util.CommandHandler
 import arc.util.Log
 import mindustry.mod.Plugin
 import net.ddns.mindustry.database.client.Database
+import net.ddns.mindustry.database.plugin.commands.client.privileged.PrivilegedClientCommand
 import net.ddns.mindustry.database.plugin.commands.client.unprivileged.UnprivilegedClientCommand
 import net.ddns.mindustry.database.plugin.commands.server.ServerCommand
+import net.ddns.mindustry.database.plugin.commands.server.permissions.BasePermissionCommand
+import net.ddns.mindustry.database.plugin.commands.server.roles.BaseRoleCommand
 import java.util.logging.LogManager
 
 @Suppress("unused")
@@ -13,7 +16,11 @@ class Main : Plugin() {
     companion object {
         var database: Database? = null
         var unprivilegedClientCommands = UnprivilegedClientCommand::class.sealedSubclasses
+        var privilegedClientCommands = PrivilegedClientCommand::class.sealedSubclasses
+
         var serverCommands = ServerCommand::class.sealedSubclasses
+        var roleCommands = BaseRoleCommand::class.sealedSubclasses
+        var permissionCommands = BasePermissionCommand::class.sealedSubclasses
     }
 
     override fun init() {
@@ -33,9 +40,12 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerCommands(unprivilegedClientCommands, handler)
+        registerCommands(privilegedClientCommands, handler)
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
         registerCommands(serverCommands, handler)
+        registerCommands(roleCommands, handler)
+        registerCommands(permissionCommands, handler)
     }
 }

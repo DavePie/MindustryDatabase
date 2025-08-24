@@ -5,7 +5,7 @@ import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.schema.tables.pojos.Role
 
-class ListRoles(handler: CommandHandler) : RoleCommand(handler) {
+class ListRoles(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
         init {
             description = "Lists all roles that are in the database."
@@ -44,7 +44,7 @@ class ListRoles(handler: CommandHandler) : RoleCommand(handler) {
      */
     private fun logRoles(roles: List<Role>) {
         for (role in roles) {
-            Log.info(String.format("- %d (%d): (%s) %s", role.id, role.priority, role.symbol, role.name))
+            Log.info("- @ (@): (@) @", role.id, role.priority, role.symbol, role.name)
         }
     }
 }

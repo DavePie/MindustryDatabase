@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 
-class GrantRole(handler: CommandHandler) : RoleCommand(handler) {
+class GrantRole(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
         init {
             description = "Grants a role to an account."

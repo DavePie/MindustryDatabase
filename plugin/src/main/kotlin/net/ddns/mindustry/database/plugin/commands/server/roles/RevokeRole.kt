@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 
-class RevokeRole(handler: CommandHandler) : RoleCommand(handler) {
+class RevokeRole(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
         init {
             description = "Revokes a role from an account."

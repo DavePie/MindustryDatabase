@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 
-class DeleteRole(handler: CommandHandler) : RoleCommand(handler) {
+class DeleteRole(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
         init {
             description = "Deletes a role from the database."
