@@ -19,11 +19,25 @@ public final class ServerTest {
     }
 
     @Test
-    public void addServer() {
+    public void addServerIpv4() {
 
         final String ip = "127.29.0.1";
         final int port = 5678;
-        final String name = "AddServer";
+        final String name = "AddServerIpv4";
+
+        final boolean added = db.server().add(ip, port, name);
+        Assertions.assertTrue(added);
+
+        final boolean conflict = db.server().add(ip, port, name);
+        Assertions.assertFalse(conflict);
+    }
+
+    @Test
+    public void addServerIpv6() {
+
+        final String ip = "2001:db8:3333:4444:5555:6666:7777:8888";
+        final int port = 5678;
+        final String name = "AddServerIpv6";
 
         final boolean added = db.server().add(ip, port, name);
         Assertions.assertTrue(added);
