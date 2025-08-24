@@ -91,6 +91,13 @@ public interface RoleQueries {
     /// @return the number of permissions linked, if less than the permission length, some permission were already not linked.
     int unlinkPermissions(Role role, Permission... permissions);
 
+    /// Returns a list of all the permissions in the database.
+    List<Permission> listPermissions();
+
+    /// Returns a list of the permissions that a given role has.
+    /// @param role The role whose permissions should be checked.
+    List<Permission> rolePermissions(Role role);
+
     /// Grants to the provided account the role.
     /// @param account the account to grant the role to.
     /// @param roles the role to grant.

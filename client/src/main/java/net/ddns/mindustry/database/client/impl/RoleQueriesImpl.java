@@ -195,6 +195,24 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
     }
 
     @Override
+    public List<Permission> listPermissions() {
+        return database().dsl().transactionResult(ctx -> ctx.dsl()
+                .selectFrom(PERMISSION)
+                .fetchInto(Permission.class));
+    }
+
+    @Override
+    public List<Permission> rolePermissions(Role role) {
+        Objects.requireNonNull(role);
+        return database().dsl().transactionResult(ctx -> ctx.dsl()
+                .select()
+                .from(ROLE_PERMISSION)
+                .innerJoin(PERMISSION).on(PERMISSION.ID.eq(ROLE_PERMISSION.ROLE_ID))
+                .where(ROLE.ID.eq(role.id()))
+                .fetchInto(Permission.class));
+    }
+
+    @Override
     public int grantRoles(Account account, Role... roles) {
 
         Objects.requireNonNull(account);
