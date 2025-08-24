@@ -127,7 +127,7 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
     }
 
     @Override
-    public boolean newRole(String name, String hexColor, String symbol, short priority) {
+    public Optional<Role> newRole(String name, String hexColor, String symbol, short priority) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(hexColor);
         Objects.requireNonNull(symbol);
@@ -138,7 +138,8 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
                 .set(Tables.ROLE.SYMBOL, symbol)
                 .set(Tables.ROLE.PRIORITY, priority)
                 .onConflictDoNothing()
-                .execute() == 1);
+                .returningResult()
+                .fetchOptionalInto(Role.class));
     }
 
     @Override

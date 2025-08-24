@@ -1,3 +1,6 @@
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 module net.ddns.mindustry.database.client {
     requires de.mkammerer.argon2.nolibs;
     requires org.postgresql.jdbc;

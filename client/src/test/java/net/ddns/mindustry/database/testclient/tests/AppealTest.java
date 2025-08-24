@@ -1,4 +1,4 @@
-package net.ddns.mindustry.database.testclient.test;
+package net.ddns.mindustry.database.testclient.tests;
 
 import net.ddns.mindustry.database.client.AppealQueries;
 import net.ddns.mindustry.database.client.Database;

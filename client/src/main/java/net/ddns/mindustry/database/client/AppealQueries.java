@@ -3,12 +3,10 @@ package net.ddns.mindustry.database.client;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Appeal;
 import net.ddns.mindustry.database.schema.tables.pojos.AppealReply;
-import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@NullMarked
 public interface AppealQueries {
 
     String uidFrom(Appeal appeal);

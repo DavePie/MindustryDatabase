@@ -1,14 +1,12 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.*;
-import org.jspecify.annotations.NullMarked;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@NullMarked
 public interface PunishmentQueries {
 
     Optional<Issuer> findIssuer(int id);

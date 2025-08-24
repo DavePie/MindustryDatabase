@@ -4,12 +4,10 @@ import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.AccountRoleHistory;
 import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
-import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@NullMarked
 public interface RoleQueries {
 
     /// Checks if this account has the role.
@@ -64,8 +62,8 @@ public interface RoleQueries {
     /// @param hexColor the color in hex format (RGBA) `FF0099EE`.
     /// @param symbol the symbol of the role, preferably a single character.
     /// @param priority the priority of the role, the smallest is displayed on top.
-    /// @return true if created, false if already present.
-    boolean newRole(String name, String hexColor, String symbol, short priority);
+    /// @return the role if created, empty if already present.
+    Optional<Role> newRole(String name, String hexColor, String symbol, short priority);
 
     /// Updates the role with the given information.
     /// @param role the role to modify.

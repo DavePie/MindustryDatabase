@@ -1,12 +1,10 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-@NullMarked
 public interface ServerQueries {
 
     /**

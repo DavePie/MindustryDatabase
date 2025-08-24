@@ -2,13 +2,11 @@ package net.ddns.mindustry.database.client;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
-import org.jspecify.annotations.NullMarked;
 import org.sqids.Sqids;
 import java.security.SecureRandom;
 import java.util.Objects;
 
 /// Class containing the hash configuration for sessions and passwords.
-@NullMarked
 public record SecurityConfig(
         SecureRandom random,
         String hashAlgorithm,

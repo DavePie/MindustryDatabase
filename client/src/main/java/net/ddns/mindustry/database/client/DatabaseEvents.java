@@ -1,10 +1,8 @@
 package net.ddns.mindustry.database.client;
 
-import org.jspecify.annotations.NullMarked;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-@NullMarked
 public interface DatabaseEvents {
 
     void register(Type type, Consumer<Event> listener);

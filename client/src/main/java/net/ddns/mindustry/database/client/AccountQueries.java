@@ -1,14 +1,12 @@
 package net.ddns.mindustry.database.client;
 
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-@NullMarked
 public interface AccountQueries {
 
     boolean isUsernameValid(@Nullable String username);
