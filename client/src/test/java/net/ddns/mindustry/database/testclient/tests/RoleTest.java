@@ -2,6 +2,7 @@ package net.ddns.mindustry.database.testclient.tests;
 
 import net.ddns.mindustry.database.client.Database;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
+import net.ddns.mindustry.database.schema.tables.pojos.Permission;
 import net.ddns.mindustry.database.schema.tables.pojos.Role;
 import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
@@ -18,8 +19,6 @@ import java.util.stream.Collectors;
 @Execution(ExecutionMode.CONCURRENT)
 public final class RoleTest {
 
-    private static final String ROLE1 = "Role1";
-    private static final String ROLE2 = "Role2";
     private final Database db;
     private final Account account;
 
@@ -31,30 +30,76 @@ public final class RoleTest {
     @Test
     public void addRole() {
 
-        final var role = db.role().newRole(ROLE1, "ffffff", "", (short) 1).orElse(null);
-        Assertions.assertNotNull(role);
-        Assertions.assertEquals(ROLE1, role.name());
+        final String roleName = "AddRole";
 
-        final var foundRole = db.role().findRole(ROLE1).orElse(null);
+        final var role = db.role().newRole(roleName, "ffffff", "", (short) 1).orElse(null);
+        Assertions.assertNotNull(role);
+        Assertions.assertEquals(roleName, role.name());
+
+        final var foundRole = db.role().findRole(roleName).orElse(null);
         Assertions.assertNotNull(foundRole);
-        Assertions.assertEquals(ROLE1, foundRole.name());
+        Assertions.assertEquals(roleName, foundRole.name());
 
         // Should be null, since the role has already been added.
-        final var roleConflict = db.role().newRole(ROLE1, "ffffff", "", (short) 1).orElse(null);
+        final var roleConflict = db.role().newRole(roleName, "ffffff", "", (short) 1).orElse(null);
         Assertions.assertNull(roleConflict);
+    }
+
+    @Test
+    public void addPermission() {
+
+        final String roleName = "AddPermission";
+        final String permProp = "AddPermission";
+
+        final var role = db.role().newRole(roleName, "ffffff", "", (short) 1).orElseThrow();
+        final var perm = db.role().newPermission(permProp).orElse(null);
+        Assertions.assertNotNull(perm);
+
+        // Should be null, since the role has already been added.
+        final var permConflict = db.role().newPermission(permProp).orElse(null);
+        Assertions.assertNull(permConflict);
+
+        final int linked = db.role().linkPermissions(role, perm);
+        Assertions.assertEquals(1, linked);
+
+        // The permission has already been linked.
+        final int linkedConflict = db.role().linkPermissions(role, perm);
+        Assertions.assertEquals(0, linkedConflict);
     }
 
     @Test
     public void accountRoles() {
 
-        final var role = db.role().newRole(ROLE2, "ffffff", "", (short) 1).orElseThrow();
+        final String roleName = "AccountRoles";
+
+        final var role = db.role().newRole(roleName, "ffffff", "", (short) 1).orElseThrow();
         final int granted = db.role().grantRoles(account, role);
         Assertions.assertEquals(1, granted);
+
+        final int grantedConflict = db.role().grantRoles(account, role);
+        Assertions.assertEquals(0, grantedConflict);
 
         final Set<String> roles = db.role().accountRoles(account)
                 .stream()
                 .map(Role::name)
                 .collect(Collectors.toSet());
-        Assertions.assertTrue(roles.contains(ROLE2));
+        Assertions.assertTrue(roles.contains(roleName));
+    }
+
+    @Test
+    public void rolePermissions() {
+
+        final String roleName = "RolePermission";
+        final String permProp = "RolePermission";
+
+        final var role = db.role().newRole(roleName, "ffffff", "", (short) 1).orElseThrow();
+        final var perm = db.role().newPermission(permProp).orElseThrow();
+        db.role().linkPermissions(role, perm);
+
+        final Set<String> perms = db.role().rolePermissions(role)
+                .stream()
+                .map(Permission::property)
+                .collect(Collectors.toSet());
+        Assertions.assertTrue(perms.contains(permProp));
     }
 }

@@ -44,8 +44,8 @@ public interface RoleQueries {
 
     /// Creates a new permission with the given property.
     /// @param permission the property of the permission to create.
-    /// @return true if the permission has been added, false if already present.
-    boolean newPermission(String permission);
+    /// @return the role if the permission has been added, empty if already present.
+    Optional<Permission> newPermission(String permission);
 
     /// Updates the property of the permission.
     /// @param permission the permission to update.

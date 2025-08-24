@@ -99,13 +99,14 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
     }
 
     @Override
-    public boolean newPermission(String permission) {
+    public Optional<Permission> newPermission(String permission) {
         Objects.requireNonNull(permission);
         return database().dsl().transactionResult(ctx -> ctx.dsl()
                 .insertInto(Tables.PERMISSION)
                 .set(Tables.PERMISSION.PROPERTY, permission)
                 .onConflictDoNothing()
-                .execute() == 1);
+                .returningResult()
+                .fetchOptionalInto(Permission.class));
     }
 
     @Override
@@ -209,9 +210,10 @@ public record RoleQueriesImpl(DatabaseImpl database) implements RoleQueries {
         return database().dsl().transactionResult(ctx -> ctx.dsl()
                 .select()
                 .from(ROLE_PERMISSION)
-                .innerJoin(PERMISSION).on(PERMISSION.ID.eq(ROLE_PERMISSION.ROLE_ID))
-                .where(ROLE.ID.eq(role.id()))
-                .fetchInto(Permission.class));
+                .innerJoin(PERMISSION).on(PERMISSION.ID.eq(ROLE_PERMISSION.PERMISSION_ID))
+                .where(ROLE_PERMISSION.ROLE_ID.eq(role.id()))
+                .fetchInto(PERMISSION) // I specify which table I want for the mapping.
+                .into(Permission.class));
     }
 
     @Override
