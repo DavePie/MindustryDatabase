@@ -37,5 +37,9 @@ public final class DbInitialization {
         return Database.newConnection(url, user, pass, builder.build());
     }
 
+    public static Database newConnection() {
+        return newConnection(1);
+    }
+
     private DbInitialization() {}
 }

@@ -23,7 +23,7 @@ public final class RoleTest {
     private final Account account;
 
     public RoleTest() {
-        this.db = DbInitialization.newConnection(2);
+        this.db = DbInitialization.newConnection();
         this.account = AccountUtil.signupAssertive(db, MockAccount.random());
     }
 
