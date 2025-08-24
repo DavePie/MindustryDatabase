@@ -42,77 +42,77 @@ public record ServerQueriesImpl(DatabaseImpl database) implements ServerQueries 
 
     @Override
     public Optional<Server> find(int id) {
-        return find(database().dsl(), id);
+        return database().dsl().transactionResult(ctx -> find(ctx.dsl(), id));
     }
 
     @Override
     public Optional<Server> find(String ip, int port) {
         final Inet inet = inet(ip);
-        return find(database().dsl(), inet, port);
+        return database().dsl().transactionResult(ctx -> find(ctx.dsl(), inet, port));
     }
 
     @Override
     public List<Server> listAll() {
-        return database().dsl()
+        return database().dsl().transactionResult(ctx -> ctx.dsl()
                 .selectFrom(SERVER)
-                .fetchInto(Server.class);
+                .fetchInto(Server.class));
     }
 
     @Override
     public boolean add(String ip, int port, String name) {
         final Inet inet = inet(ip);
-        return database().dsl()
+        return database().dsl().transactionResult(ctx -> ctx.dsl()
                 .insertInto(SERVER)
                 .set(SERVER.IP_ADDRESS, inet)
                 .set(SERVER.PORT, port)
                 .set(SERVER.NAME, name)
                 .onConflictDoNothing()
-                .execute() == 1; // 1 row if the server has been added, 0 if already present.
+                .execute() == 1); // 1 row if the server has been added, 0 if already present.
     }
 
     @Override
     public void update(Server server, @Nullable String newIP, @Nullable Integer newPort, @Nullable String newName) {
         Objects.requireNonNull(server);
-        database().dsl()
+        database().dsl().transaction(ctx -> ctx.dsl()
                 .update(SERVER)
                 .set(SERVER.IP_ADDRESS, newIP == null ? server.ipAddress() : inet(newIP))
                 .set(SERVER.PORT, newPort == null ? server.port() : newPort)
                 .set(SERVER.NAME, newName == null ? server.name() : newName)
                 .where(SERVER.ID.eq(server.id()))
-                .execute();
+                .execute());
     }
 
     @Override
     public void heartbeat(Server server) {
         Objects.requireNonNull(server);
-        database().dsl()
+        database().dsl().transaction(ctx -> ctx.dsl()
                 .update(SERVER)
                 .set(SERVER.HEARTBEAT, OffsetDateTime.now())
                 .where(SERVER.ID.eq(server.id()))
-                .execute();
+                .execute());
     }
 
     @Override
     public void remove(Server server) {
         Objects.requireNonNull(server);
-        database().dsl()
+        database().dsl().transaction(ctx -> ctx.dsl()
                 .deleteFrom(SERVER)
                 .where(SERVER.ID.eq(server.id()))
-                .execute();
+                .execute());
     }
 
     @Override
     public void modifyWhitelist(Server server, boolean enabled) {
         Objects.requireNonNull(server);
-        database().dsl()
+        database().dsl().transaction(ctx -> ctx.dsl()
                 .update(SERVER)
                 .set(SERVER.WHITELIST_ENABLED, enabled)
                 .where(SERVER.ID.eq(server.id()))
-                .execute();
+                .execute());
     }
 
     @Override
     public boolean isWhitelistEnabled(Server server) {
-        return isWhitelistEnabled(database().dsl(), server.id());
+        return database().dsl().transactionResult(ctx -> isWhitelistEnabled(ctx.dsl(), server.id()));
     }
 }
