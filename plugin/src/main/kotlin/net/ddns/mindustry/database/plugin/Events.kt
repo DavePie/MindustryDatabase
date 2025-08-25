@@ -42,7 +42,7 @@ private fun playerConnect(event: PlayerConnect) {
 
         is ServerAccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
 
-        is ServerAccountQueries.JoinStatus.NotWhitelisted -> event.player.kick("You're not whitelisted to join this server.", 0)
+        is ServerAccountQueries.JoinStatus.NotWhitelisted -> event.player.kick("You're not whitelisted in this server.", 0)
 
         is ServerAccountQueries.JoinStatus.Joined -> {
             event.player.sendMessage("[gold]Welcome back to the server!")

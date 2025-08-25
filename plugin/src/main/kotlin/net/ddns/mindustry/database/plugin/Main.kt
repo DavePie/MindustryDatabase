@@ -31,6 +31,7 @@ class Main : Plugin() {
 
         loadEvents()
         loadChatFilters()
+        loadActionFilters()
         restartConfigDependentFeatures()
 
         Log.info("Database plugin loaded.")

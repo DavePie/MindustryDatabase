@@ -2,6 +2,7 @@ package net.ddns.mindustry.database.plugin
 
 import arc.util.CommandHandler
 import arc.util.Log
+import mindustry.gen.Player
 import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.client.SecurityConfig
 import net.ddns.mindustry.database.plugin.Main.Companion.database
@@ -11,6 +12,7 @@ import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPa
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configURL
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUser
 import net.ddns.mindustry.database.plugin.configs.ReloadableConfig.Configs.reloadConfigs
+import net.ddns.mindustry.database.schema.tables.pojos.Account
 import java.security.NoSuchAlgorithmException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
@@ -75,3 +77,20 @@ fun registerCommands(commandList: List<KClass<out BaseCommand>>, handler: Comman
         command.primaryConstructor!!.call(handler)
     }
 }
+
+//fun kickForBan(player: Player, account: Account) {
+//    val ban = database!!.punishment().findBan(account)
+//
+//    if (ban.isEmpty) {
+//        Log.err("Couldn't find ban for account @.", account.username)
+//        return;
+//    }
+//
+//    val banExpiration = ban.get().expirationDate
+//    val reason = ban.get().reason
+//    val until = String.format("%d-%d-%d (DD-MM-YYYY)", banExpiration.dayOfMonth, banExpiration.monthValue,
+//        banExpiration.year)
+//    val banTemplate = "Reason: $reason\n\nUntil: $until"
+//
+//    player.kick(banTemplate)
+//}

@@ -16,7 +16,7 @@ class Ban(handler: CommandHandler) : PrivilegedClientCommand(handler) {
         val banPermission: Permission
 
         init {
-            description = "Bans an account via its username. Display names are usernames are separate.."
+            description = "Bans an account via its username. Display names are usernames are separate."
             parameters = "<account-name> <duration> <reason...>"
 
             database!!.role().newPermission("ban")
@@ -35,6 +35,11 @@ class Ban(handler: CommandHandler) : PrivilegedClientCommand(handler) {
         val target = database!!.account().find(targetName)
         val duration = Duration.parse(durationString)
         val server = database!!.server().find(PluginConfigs.configServerIP.string(), Administration.Config.port.num())
+
+        if (target.isEmpty) {
+            player.sendMessage("[scarlet]Couldn't find that player!")
+            return
+        }
 
         database!!.punishment().ban(target.get(), issuer, reason, server.get(), duration.toJavaDuration())
         player.sendMessage("$targetName was banned.")
