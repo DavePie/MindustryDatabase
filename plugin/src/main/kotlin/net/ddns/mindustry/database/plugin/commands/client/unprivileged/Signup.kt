@@ -23,7 +23,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             "Type in the username you'll use for your account (this [scarlet]cannot[] be changed)",
             ::callbackSignupUsername,
             32
-        ).show()
+        ).show(player.con())
     }
 
     private fun callbackSignupUsername(player: Player, text: String?, args: Array<String>) {
@@ -38,7 +38,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             "[gold]Signup (2/2)",
             "Type in the password you wish to use",
             ::callbackSignupPassword
-        ).show()
+        ).show(player.con())
     }
 
     private fun callbackSignupPassword(player: Player, text: String?, args: Array<String>) {

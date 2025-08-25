@@ -26,7 +26,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             32,
             "",
             false
-        ).show()
+        ).show(player.con())
     }
 
     private fun callbackLoginUsername(player: Player, text: String?, args: Array<String>) {
@@ -41,7 +41,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             "[gold]Login (2/2)",
             "Type in your password",
             ::callbackLoginPassword
-        ).show()
+        ).show(player.con())
     }
 
     private fun callbackLoginPassword(player: Player, text: String?, args: Array<String>) {
