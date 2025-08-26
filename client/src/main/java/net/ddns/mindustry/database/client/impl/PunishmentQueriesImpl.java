@@ -172,7 +172,7 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
                 .select()
                 .from(BAN)
                 .leftAntiJoin(UNBAN).on(UNBAN.BAN_ID.eq(BAN.ID))
-                .where(BAN.EXPIRATION_DATE.isNull().or(BAN.EXPIRATION_DATE.greaterThan(now)))
+                .where(BAN.ACCOUNT_ID.eq(account.id()).and(BAN.EXPIRATION_DATE.isNull().or(BAN.EXPIRATION_DATE.greaterThan(now))))
                 .fetchInto(Ban.class);
     }
 
