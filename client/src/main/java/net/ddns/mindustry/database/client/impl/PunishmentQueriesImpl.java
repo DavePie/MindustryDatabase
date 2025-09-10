@@ -117,42 +117,48 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
     }
 
     @Override
-    public Optional<Ban> latestBan() {
+    public Optional<Ban> latestBan(Account account) {
+        Objects.requireNonNull(account);
         return database().dsl()
                 .select()
                 .from(BAN)
+                .where(BAN.ACCOUNT_ID.eq(account.id()))
                 .orderBy(BAN.CREATION_DATE.desc())
                 .limit(1)
                 .fetchOptionalInto(Ban.class);
     }
 
     @Override
-    public Optional<Mute> latestMute() {
+    public Optional<Mute> latestMute(Account account) {
+        Objects.requireNonNull(account);
         return database().dsl()
                 .select()
                 .from(MUTE)
+                .where(MUTE.ACCOUNT_ID.eq(account.id()))
                 .orderBy(MUTE.CREATION_DATE.desc())
                 .limit(1)
                 .fetchOptionalInto(Mute.class);
     }
 
     @Override
-    public Optional<Warn> latestUnseenWarn() {
+    public Optional<Warn> latestUnseenWarn(Account account) {
+        Objects.requireNonNull(account);
         return database().dsl()
                 .select()
                 .from(WARN)
-                .where(WARN.SEEN.eq(false))
+                .where(WARN.ACCOUNT_ID.eq(account.id()).and(WARN.SEEN.eq(false)))
                 .orderBy(WARN.CREATION_DATE.desc())
                 .limit(1)
                 .fetchOptionalInto(Warn.class);
     }
 
     @Override
-    public List<Warn> unseenWarns() {
+    public List<Warn> unseenWarns(Account account) {
+        Objects.requireNonNull(account);
         return database().dsl()
                 .select()
                 .from(WARN)
-                .where(WARN.SEEN.eq(false))
+                .where(WARN.ACCOUNT_ID.eq(account.id()).and(WARN.SEEN.eq(false)))
                 .fetchInto(Warn.class);
     }
 

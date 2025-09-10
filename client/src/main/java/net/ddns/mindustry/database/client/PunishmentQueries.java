@@ -11,13 +11,13 @@ public interface PunishmentQueries {
 
     Optional<Issuer> findIssuer(int id);
 
-    Optional<Ban> latestBan();
+    Optional<Ban> latestBan(Account account);
 
-    Optional<Mute> latestMute();
+    Optional<Mute> latestMute(Account account);
 
-    Optional<Warn> latestUnseenWarn();
+    Optional<Warn> latestUnseenWarn(Account account);
 
-    List<Warn> unseenWarns();
+    List<Warn> unseenWarns(Account account);
 
     void markWarnSeen(Warn warn);
 
@@ -29,6 +29,8 @@ public interface PunishmentQueries {
 
     Optional<Ban> findBan(int id);
 
+    /// @deprecated use [latestBan(Account)][PunishmentQueries#latestBan(net.ddns.mindustry.database.schema.tables.pojos.Account)] instead.
+    @Deprecated
     Optional<Ban> findBan(Account account);
 
     Optional<Kick> findKick(int id);
