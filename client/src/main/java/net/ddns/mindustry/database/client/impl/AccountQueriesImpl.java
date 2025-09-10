@@ -20,15 +20,7 @@ import static net.ddns.mindustry.database.client.impl.DatabaseImpl.inet;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
-public final class AccountQueriesImpl implements AccountQueries {
-
-    private final DatabaseImpl database;
-    private final MessageDigest digest;
-
-    public AccountQueriesImpl(DatabaseImpl database, MessageDigest digest) {
-        this.database = database;
-        this.digest = digest;
-    }
+public record AccountQueriesImpl(DatabaseImpl database, MessageDigest digest) implements AccountQueries {
 
     public AccountQueriesImpl(DatabaseImpl database) {
         this(database, newDigest(database));
@@ -117,7 +109,8 @@ public final class AccountQueriesImpl implements AccountQueries {
             final var cteAccount = Objects.requireNonNull(cteTable.field(LOGIN.ACCOUNT_ID));
             return query.select(DSL.countDistinct(cteAccount))
                     .from(cteTable)
-                    .fetchOneInto(Integer.class);
+                    .fetchOptionalInto(Integer.class)
+                    .orElseThrow(IllegalStateException::new);
         });
     }
 
@@ -338,29 +331,5 @@ public final class AccountQueriesImpl implements AccountQueries {
             security.argon2().wipeArray(oldPassword);
             security.argon2().wipeArray(newPassword);
         }
-    }
-
-    public DatabaseImpl database() {
-        return database;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (!(obj instanceof AccountQueriesImpl that)) return false;
-        return Objects.equals(this.database, that.database) &&
-                Objects.equals(this.digest, that.digest);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(database, digest);
-    }
-
-    @Override
-    public String toString() {
-        return "AccountQueriesImpl[" +
-                "database=" + database + ", " +
-                "digest=" + digest + ']';
     }
 }
