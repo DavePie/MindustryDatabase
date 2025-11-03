@@ -16,7 +16,7 @@ class Ban(handler: CommandHandler) : PrivilegedClientCommand(handler) {
         val banPermission: Permission
 
         init {
-            description = "Bans an account via its username. Display names are usernames are separate."
+            description = "Bans an account via its username. Display names and usernames are separate."
             parameters = "<account-name> <duration> <reason...>"
 
             database!!.role().newPermission("ban")
