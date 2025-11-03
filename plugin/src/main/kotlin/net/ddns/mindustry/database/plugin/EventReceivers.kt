@@ -13,12 +13,15 @@ import mindustry.net.Administration
 import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
+import net.ddns.mindustry.database.plugin.events.PlayerLogin
 
 fun loadEvents() {
     Events.on(PlayerConnect::class.java) {e -> playerConnect(e)}
+    Events.on(PlayerLogin::class.java) {e -> showWarns(e)}
+
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
-    Events.on(PlayEvent::class.java) {e -> startHeartbeatScheduler()}
-    Events.on(StateChangeEvent::class.java) { e -> gameOver(e)}
+    Events.on(PlayEvent::class.java) {_ -> startHeartbeatScheduler()}
+    Events.on(StateChangeEvent::class.java) {e -> gameOver(e)}
 }
 
 private fun playerConnect(event: PlayerConnect) {
@@ -46,7 +49,15 @@ private fun playerConnect(event: PlayerConnect) {
 
         is ServerAccountQueries.JoinStatus.Joined -> {
             event.player.sendMessage("[gold]Welcome back to the server!")
+            Events.fire(PlayerLogin(event.player, status.account))
         }
+    }
+}
+
+private fun showWarns(event: PlayerLogin) {
+    for (warn in database!!.punishment().unseenWarns(event.account)) {
+        val warnString = String.format("[orange]Warning![]\nYou have been warned for:\n%s", warn.reason)
+        Call.infoMessage(event.player.con(), warnString)
     }
 }
 
