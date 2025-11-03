@@ -1,7 +1,6 @@
 package net.ddns.mindustry.database.plugin.commands.client.privileged
 
 import arc.util.CommandHandler
-import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
 import net.ddns.mindustry.database.client.PunishmentQueries.Issuer
