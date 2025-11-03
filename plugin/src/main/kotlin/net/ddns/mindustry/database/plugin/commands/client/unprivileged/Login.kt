@@ -1,5 +1,6 @@
 package net.ddns.mindustry.database.plugin.commands.client.unprivileged
 
+import arc.Events
 import arc.util.CommandHandler
 import arc.util.Log
 import mindustry.game.Team
@@ -8,6 +9,7 @@ import mindustry.gen.Player
 import net.ddns.mindustry.database.client.AccountQueries.LoginStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSessionDuration
+import net.ddns.mindustry.database.plugin.events.PlayerLogin
 import java.time.Duration
 
 class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
@@ -66,6 +68,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             is LoggedIn -> {
                 player.team(Team.sharded)
                 player.sendMessage("Logged in successfully.")
+                Events.fire(PlayerLogin(player, loginResult.account))
             }
             // The else is not needed. This should throw an error if all case aren't accounted for.
 //        else -> {
