@@ -34,6 +34,12 @@ class Main : Plugin() {
         loadActionFilters()
         restartConfigDependentFeatures()
 
+        if (database == null) {
+            Log.warn("Couldn't start database. Privileged commands won't be available until the server is properly" +
+                    " configured and restarted.")
+            return;
+        }
+
         Log.info("Database plugin loaded.")
         Log.warn("Do NOT run `exit` when hosting. Instead, stop the server with `stop` and then `exit`. This ensures " +
                 "that the scheduler is closed gracefully.")
@@ -41,6 +47,9 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerCommands(unprivilegedClientCommands, handler)
+
+        if (database == null) return
+
         registerCommands(privilegedClientCommands, handler)
     }
 

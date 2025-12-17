@@ -10,19 +10,20 @@ import net.ddns.mindustry.database.schema.tables.pojos.Permission
 
 class Warn(handler: CommandHandler) : PrivilegedClientCommand(handler) {
     companion object {
-        val warnPermission: Permission
+        val permission: Permission
+        private const val PERMISSION_NAME = "warn"
 
         init {
             description = "Warns a player."
             parameters = "<account-name> <reason...>"
 
-            database!!.role().newPermission("ban")
-            warnPermission = database!!.role().findPermission("ban").get()
+            database!!.role().newPermission(PERMISSION_NAME)
+            permission = database!!.role().findPermission(PERMISSION_NAME).get()
         }
     }
 
     override fun runner(arguments: Array<String>, player: Player) {
-        val issuerAccount = hasPermission(warnPermission, player) ?: return
+        val issuerAccount = hasPermission(permission, player) ?: return
         val issuer = Issuer.Player(issuerAccount)
 
         val targetName = arguments[0]
@@ -37,6 +38,6 @@ class Warn(handler: CommandHandler) : PrivilegedClientCommand(handler) {
         }
 
         database!!.punishment().warn(target.get(), issuer, reason, server.get())
-        player.sendMessage("$targetName was banned.")
+        player.sendMessage("$targetName was warned.")
     }
 }
