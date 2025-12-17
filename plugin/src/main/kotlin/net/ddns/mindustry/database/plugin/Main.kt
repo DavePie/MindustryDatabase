@@ -29,7 +29,7 @@ class Main : Plugin() {
         // https://stackoverflow.com/a/5762502
         Log.info("\u001B[34mPowered by jOOQ.\u001B[0m")
 
-        loadEvents()
+        loadMindustryEvents()
         loadChatFilters()
         loadActionFilters()
         restartConfigDependentFeatures()
@@ -39,6 +39,8 @@ class Main : Plugin() {
                     " configured and restarted.")
             return;
         }
+
+        loadDatabaseEvents()
 
         Log.info("Database plugin loaded.")
         Log.warn("Do NOT run `exit` when hosting. Instead, stop the server with `stop` and then `exit`. This ensures " +

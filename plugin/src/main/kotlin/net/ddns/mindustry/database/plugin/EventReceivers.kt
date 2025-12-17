@@ -9,19 +9,42 @@ import mindustry.game.EventType.PlayEvent
 import mindustry.game.EventType.StateChangeEvent
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Player
 import mindustry.net.Administration
+import net.ddns.mindustry.database.client.DatabaseEvents
 import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
+import net.ddns.mindustry.database.schema.tables.pojos.Warn
 
-fun loadEvents() {
+fun loadMindustryEvents() {
     Events.on(PlayerConnect::class.java) {e -> playerConnect(e)}
     Events.on(PlayerLogin::class.java) {e -> showWarns(e)}
 
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
     Events.on(PlayEvent::class.java) {_ -> startHeartbeatScheduler()}
     Events.on(StateChangeEvent::class.java) {e -> gameOver(e)}
+}
+
+fun loadDatabaseEvents() {
+    database!!.events().register(DatabaseEvents.Type.WARN) {e -> playerWarn(e)}
+}
+
+private fun playerWarn(event: DatabaseEvents.Event) {
+    when (event) {
+        is DatabaseEvents.Event.Value -> {
+            val warn = database!!.punishment().findWarn(event.id()).get()
+            val account = database!!.account().find(warn.accountId()).get()
+            val player = findOnlinePlayer(account.username)
+
+            if (player == null) return
+
+            showWarn(warn, player)
+        }
+
+        is DatabaseEvents.Event.Failure -> Log.err(event.exception())
+    }
 }
 
 private fun playerConnect(event: PlayerConnect) {
@@ -54,10 +77,15 @@ private fun playerConnect(event: PlayerConnect) {
     }
 }
 
+private fun showWarn(warn: Warn, player: Player) {
+    val warnString = String.format("[orange]Warning![]\nYou have been warned for:\n%s", warn.reason)
+    Call.infoMessage(player.con(), warnString)
+    database!!.punishment().markWarnSeen(warn)
+}
+
 private fun showWarns(event: PlayerLogin) {
     for (warn in database!!.punishment().unseenWarns(event.account)) {
-        val warnString = String.format("[orange]Warning![]\nYou have been warned for:\n%s", warn.reason)
-        Call.infoMessage(event.player.con(), warnString)
+        showWarn(warn, event.player)
     }
 }
 

@@ -2,6 +2,8 @@ package net.ddns.mindustry.database.plugin
 
 import arc.util.CommandHandler
 import arc.util.Log
+import mindustry.Vars
+import mindustry.gen.Groups
 import mindustry.gen.Player
 import net.ddns.mindustry.database.client.Database
 import net.ddns.mindustry.database.client.SecurityConfig
@@ -76,6 +78,17 @@ fun registerCommands(commandList: List<KClass<out BaseCommand>>, handler: Comman
     for (command in commandList) {
         command.primaryConstructor!!.call(handler)
     }
+}
+
+fun findOnlinePlayer(username: String): Player? {
+    val result = Groups.player.find {player -> comparePlayer(username, player)}
+    return result
+}
+
+private fun comparePlayer(username: String, player: Player): Boolean {
+    val account = database!!.account().find(player.ip(), player.uuid())
+    if (account.isEmpty) return false
+    return account.get().username() == username
 }
 
 //fun kickForBan(player: Player, account: Account) {
