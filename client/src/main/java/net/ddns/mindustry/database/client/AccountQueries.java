@@ -19,6 +19,10 @@ public interface AccountQueries {
     /// @return the account if found.
     Optional<Account> find(String ip, String uuid);
 
+    /// Gets an account via its ID.
+    /// @return the account if found.
+    Optional<Account> find(int id);
+
     Set<Account> findAccounts(String ip);
 
     /// Does a login attempt and if successful, creates a new session with the provided duration.

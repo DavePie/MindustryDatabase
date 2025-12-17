@@ -235,6 +235,8 @@ public record AccountQueriesImpl(DatabaseImpl database, MessageDigest digest) im
         });
     }
 
+    public Optional<Account> find(int id) {return find(database().dsl(), id);}
+
     @Override
     public Set<Account> findAccounts(String ip) {
         final Inet inet = inet(ip);
