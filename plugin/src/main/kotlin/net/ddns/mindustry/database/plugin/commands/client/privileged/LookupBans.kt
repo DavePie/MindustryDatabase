@@ -32,7 +32,7 @@ class LookupBans(handler: CommandHandler) : PrivilegedClientCommand(handler) {
             return
         }
 
-        val bans = database!!.punishment().activeBans(account)
+        val bans = database!!.punishment().activeBans(target.get())
 
         if (bans.size == 0) {
             player.sendMessage("That player has no active bans.")
