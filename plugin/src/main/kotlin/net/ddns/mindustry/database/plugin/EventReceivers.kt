@@ -16,11 +16,14 @@ import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
+import net.ddns.mindustry.database.schema.tables.pojos.Role
 import net.ddns.mindustry.database.schema.tables.pojos.Warn
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun loadMindustryEvents() {
     Events.on(PlayerConnect::class.java) {e -> playerConnect(e)}
-    Events.on(PlayerLogin::class.java) {e -> showWarns(e)}
+    Events.on(PlayerLogin::class.java) {e -> playerLogin(e)}
 
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
     Events.on(PlayEvent::class.java) {_ -> startHeartbeatScheduler()}
@@ -29,6 +32,13 @@ fun loadMindustryEvents() {
 
 fun loadDatabaseEvents() {
     database!!.events().register(DatabaseEvents.Type.WARN) {e -> playerWarn(e)}
+    database!!.events().register(DatabaseEvents.Type.BAN) {e -> playerBan(e)}
+}
+
+private fun showWarn(warn: Warn, player: Player) {
+    val warnString = String.format("[orange]Warning![]\nYou have been warned for:\n%s", warn.reason)
+    Call.infoMessage(player.con(), warnString)
+    database!!.punishment().markWarnSeen(warn)
 }
 
 private fun playerWarn(event: DatabaseEvents.Event) {
@@ -36,9 +46,7 @@ private fun playerWarn(event: DatabaseEvents.Event) {
         is DatabaseEvents.Event.Value -> {
             val warn = database!!.punishment().findWarn(event.id()).get()
             val account = database!!.account().find(warn.accountId()).get()
-            val player = findOnlinePlayer(account.username)
-
-            if (player == null) return
+            val player = findOnlinePlayer(account.username) ?: return
 
             showWarn(warn, player)
         }
@@ -47,6 +55,21 @@ private fun playerWarn(event: DatabaseEvents.Event) {
     }
 }
 
+private fun playerBan(event: DatabaseEvents.Event) {
+    when (event) {
+        is DatabaseEvents.Event.Value -> {
+            val ban = database!!.punishment().findBan(event.id()).get()
+            val account = database!!.account().find(ban.accountId()).get()
+            val player = findOnlinePlayer(account.username) ?: return
+
+            Call.infoMessage(player.con(), formatBan(account, ban))
+        }
+
+        is DatabaseEvents.Event.Failure -> Log.err(event.exception())
+    }
+}
+
+@OptIn(ExperimentalEncodingApi::class)
 private fun playerConnect(event: PlayerConnect) {
     val port = Administration.Config.port.num()
     val server = database!!.server().find(configServerIP.string(), port)
@@ -64,6 +87,7 @@ private fun playerConnect(event: PlayerConnect) {
             Call.infoMessage(event.player.con(), "You are not logged in. Please log in using the [gold]/login[]" +
                     " command or signup with the [gold]/signup[] command.")
             event.player.team(Team.derelict)
+            event.player.name(Base64.Default.encode(event.player.name().encodeToByteArray()))
         }
 
         is ServerAccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
@@ -77,15 +101,30 @@ private fun playerConnect(event: PlayerConnect) {
     }
 }
 
-private fun showWarn(warn: Warn, player: Player) {
-    val warnString = String.format("[orange]Warning![]\nYou have been warned for:\n%s", warn.reason)
-    Call.infoMessage(player.con(), warnString)
-    database!!.punishment().markWarnSeen(warn)
-}
+@OptIn(ExperimentalEncodingApi::class)
+private fun playerLogin(event: PlayerLogin) {
+    if (event.player.name().endsWith("==")) {
+        try {event.player.name(Base64.Default.decode(event.player.name()).decodeToString())}
+        catch (_: IllegalArgumentException) {}
+    }
 
-private fun showWarns(event: PlayerLogin) {
+    val roles = database!!.role().accountRoles(event.account)
+    if (roles.isNotEmpty()) {
+        roles.sortByDescending { role -> role.priority }
+        event.player.name(String.format("[accent]<[white]%s[accent]>[white] %s", roles[0].symbol, event.player.name()))
+    }
+
     for (warn in database!!.punishment().unseenWarns(event.account)) {
         showWarn(warn, event.player)
+    }
+
+    val bans = database!!.punishment().activeBans(event.account)
+    if (bans.isNotEmpty()) {
+        val message = formatBan(event.account, bans[0])
+        // if the player just joined, then their player object cannot be found, and the message will be null
+        // since there are multiple ways for a player to login, there's also a case for when it isn't null
+        if (message != null) Call.infoMessage(event.player.con(), message)
+        if (message == null) event.player.sendMessage(String.format("[scarlet]You are banned! Reason: %s", bans[0].reason))
     }
 }
 

@@ -15,7 +15,9 @@ import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUR
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUser
 import net.ddns.mindustry.database.plugin.configs.ReloadableConfig.Configs.reloadConfigs
 import net.ddns.mindustry.database.schema.tables.pojos.Account
+import net.ddns.mindustry.database.schema.tables.pojos.Ban
 import java.security.NoSuchAlgorithmException
+import java.time.format.DateTimeFormatter
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
@@ -83,6 +85,14 @@ fun registerCommands(commandList: List<KClass<out BaseCommand>>, handler: Comman
 fun findOnlinePlayer(username: String): Player? {
     val result = Groups.player.find {player -> comparePlayer(username, player)}
     return result
+}
+
+fun formatBan(account: Account, ban: Ban): String? {
+    val player = findOnlinePlayer(account.username) ?: return null
+
+    return String.format("[scarlet]You've been banned!\n" +
+            "[accent]Reason: [white]%s\n" +
+            "[accent]Duration: [white]%s", ban.reason(), ban.expirationDate.format(DateTimeFormatter.ISO_DATE))
 }
 
 private fun comparePlayer(username: String, player: Player): Boolean {

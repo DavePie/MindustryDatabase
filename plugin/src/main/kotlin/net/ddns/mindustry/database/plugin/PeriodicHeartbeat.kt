@@ -1,8 +1,9 @@
 package net.ddns.mindustry.database.plugin
 
 import arc.util.Log
+import mindustry.Vars.*
+import mindustry.core.GameState
 import mindustry.net.Administration
-import mindustry.Vars.net
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.schema.tables.pojos.Server
@@ -15,6 +16,14 @@ private var server: Server? = null
 private var scheduler: ScheduledExecutorService? = null
 
 fun startHeartbeatScheduler() {
+    if (database == null) {
+        Log.warn("No connection to database. Aborting.")
+        net.closeServer()
+        state.set(GameState.State.menu)
+        Log.warn("Aborted. Server is offline now.")
+        return
+    }
+
     val possibleServer = database!!.server().find(configServerIP.string(), Administration.Config.port.num())
 
     if (possibleServer.isEmpty) {
