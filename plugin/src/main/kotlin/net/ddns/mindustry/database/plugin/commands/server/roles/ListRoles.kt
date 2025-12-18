@@ -27,6 +27,7 @@ class ListRoles(handler: CommandHandler) : BaseRoleCommand(handler) {
 
         if (account.isEmpty) {
             Log.err("Couldn't find an account by that name.")
+            return
         }
 
         val accountRoles = database!!.role().accountRoles(account.get())
