@@ -19,7 +19,6 @@ import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSe
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
 import net.ddns.mindustry.database.schema.tables.pojos.Account
 import net.ddns.mindustry.database.schema.tables.pojos.Warn
-import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun loadMindustryEvents() {
@@ -104,6 +103,7 @@ private fun playerBan(event: DatabaseEvents.Event) {
 
             val player = findOnlinePlayer(account.username) ?: return
             Call.infoMessage(player.con(), formatBan(account, ban))
+            obfuscateUsername(player)
         }
 
         is DatabaseEvents.Event.Failure -> Log.err(event.exception())
@@ -128,7 +128,7 @@ private fun playerConnect(event: PlayerConnect) {
             Call.infoMessage(event.player.con(), "You are not logged in. Please log in using the [gold]/login[]" +
                     " command or signup with the [gold]/signup[] command.")
             event.player.team(Team.derelict)
-            event.player.name(Base64.Default.encode(event.player.name().encodeToByteArray()))
+            obfuscateUsername(event.player)
         }
 
         is ServerAccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
@@ -144,17 +144,6 @@ private fun playerConnect(event: PlayerConnect) {
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun playerLogin(event: PlayerLogin) {
-    if (event.player.name().endsWith("==")) {
-        try {event.player.name(Base64.Default.decode(event.player.name()).decodeToString())}
-        catch (_: IllegalArgumentException) {}
-    }
-
-    val roles = database!!.role().accountRoles(event.account)
-    if (roles.isNotEmpty()) {
-        roles.sortByDescending { role -> role.priority }
-        event.player.name(String.format("[accent]<[white]%s[accent]>[white] %s", roles[0].symbol, event.player.name()))
-    }
-
     for (warn in database!!.punishment().unseenWarns(event.account)) {
         showWarn(warn, event.player)
     }
@@ -165,7 +154,17 @@ private fun playerLogin(event: PlayerLogin) {
         // if the player just joined, then their player object cannot be found, and the message will be null
         // since there are multiple ways for a player to login, there's also a case for when it isn't null
         if (message != null) Call.infoMessage(event.player.con(), message)
-        if (message == null) event.player.sendMessage(String.format("[scarlet]You are banned! Reason: %s", bans[0].reason))
+        else event.player.sendMessage(String.format("[scarlet]You are banned! Reason: %s", bans[0].reason))
+        obfuscateUsername(event.player)
+    } else if (event.player.name().isEmpty()) {
+        deobfuscateUsername(event.player)
+        Call.sendMessage("[accent]${event.player.plainName()} has connected.")
+    }
+
+    val roles = database!!.role().accountRoles(event.account)
+    if (roles.isNotEmpty()) {
+        roles.sortByDescending { role -> role.priority }
+        event.player.name(String.format("[accent]<[white]%s[accent]>[white] %s", roles[0].symbol, event.player.name()))
     }
 }
 
@@ -179,6 +178,7 @@ private fun playerLeave(event: PlayerLeave) {
     val port = Administration.Config.port.num()
     val server = database!!.server().find(configServerIP.string(), port)
     database!!.serverAccount().leavesServer(account.get(), server.get())
+    removeUsername(event.player)
 }
 
 private fun gameOver(event: StateChangeEvent) {
