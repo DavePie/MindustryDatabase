@@ -7,8 +7,6 @@ import net.ddns.mindustry.database.client.PunishmentQueries.Issuer
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs
 import net.ddns.mindustry.database.schema.tables.pojos.Permission
-import kotlin.time.Duration
-import kotlin.time.toJavaDuration
 
 class Kick(handler: CommandHandler) : PrivilegedClientCommand(handler) {
     companion object {

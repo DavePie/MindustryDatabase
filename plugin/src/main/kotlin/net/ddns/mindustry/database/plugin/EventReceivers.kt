@@ -18,7 +18,6 @@ import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
 import net.ddns.mindustry.database.schema.tables.pojos.Account
-import net.ddns.mindustry.database.schema.tables.pojos.Role
 import net.ddns.mindustry.database.schema.tables.pojos.Warn
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -86,7 +85,7 @@ private fun playerKick(event: DatabaseEvents.Event) {
             sharePunishment("Kick", account, issuer.get(), server.get().name())
 
             val player = findOnlinePlayer(account.username) ?: return
-            player.kick(kick.reason());
+            player.kick(kick.reason())
         }
 
         is DatabaseEvents.Event.Failure -> Log.err(event.exception())
