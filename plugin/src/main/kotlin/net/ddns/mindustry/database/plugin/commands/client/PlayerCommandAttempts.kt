@@ -13,7 +13,7 @@ class PlayerCommandAttempts {
     fun isSpamming(uuid: String): Boolean {
         val attempts = getPlayerAttempts(uuid)
 
-        if (attempts.isNullOrEmpty()) return false;
+        if (attempts.isNullOrEmpty()) return false
 
         Log.debug("Average time: @", getAverageDuration(attempts))
         return getAverageDuration(attempts) < configCommandRateLimit.num()

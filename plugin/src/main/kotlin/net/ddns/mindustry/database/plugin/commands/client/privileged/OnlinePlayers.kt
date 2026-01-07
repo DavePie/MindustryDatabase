@@ -30,7 +30,7 @@ class OnlinePlayers(handler: CommandHandler) : PrivilegedClientCommand(handler) 
             val target = database!!.account().find(user.ip(), user.uuid())
 
             // exclude banned players
-            if (target.isPresent && database!!.punishment().activeBans(target.get()).size != 0) continue;
+            if (target.isPresent && database!!.punishment().activeBans(target.get()).size != 0) continue
 
             targets[user.coloredName()] = target.getOrNull()
         }
