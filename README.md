@@ -23,7 +23,7 @@ Also ensure to change the `localhost` to the appropriate IP/domain.
 ```properties
 url=jdbc:postgresql://localhost/mindustry_database
 user=lett
-password=
+password=R2V0IFBob3MnZA==
 ```
 5. Save the file, and go to the root of the Git repository. Run `./gradlew jooq`.
 6. Initial setup should be complete. Refer to the [per-server configuration](#per-server-setup) section.
