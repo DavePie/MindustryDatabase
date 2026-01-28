@@ -26,9 +26,13 @@ dependencies {
     implementation libs.jna // For some reason gradle cannot resolve this dependency for argon2, so I added it manually.
     implementation libs.jspecify
     implementation libs.sqids
+    implementation libs.hikariCP
 
-    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation platform('org.junit:junit-bom:6.0.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
     testImplementation libs.sqids
 }
 
@@ -45,8 +49,8 @@ test {
 
 java {
     // If you think this Java version is too high for a library, I don't care, update your software.
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 // Includes JOOQ sources into the client.
@@ -111,16 +115,22 @@ jooq {
     }
 }
 
+tasks.register("dropDb", Exec) {
+    commandLine "dropdb", "--if-exists", "mindustry_database"
+}
+
+tasks.register("createDb", Exec) {
+    dependsOn(dropDb)
+    commandLine "createdb", "mindustry_database"
+}
+
+tasks.register("initDb", Exec) {
+    dependsOn(createDb)
+    commandLine "psql", "mindustry_database", "-f", "tables.sql"
+}
+
 tasks.register("updateDatabase") {
-    exec {
-        commandLine "dropdb", "--if-exists", "mindustry_database"
-    }
-    exec {
-        commandLine "createdb", "mindustry_database"
-    }
-    exec {
-        commandLine "psql", "mindustry_database", "-f", "tables.sql"
-    }
+    dependsOn(dropDb, createDb, initDb)
 }
 
 tasks.named("test") {

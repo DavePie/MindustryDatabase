@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS online_account(
     join_date    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_online_account_account_id FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_online_account_server_id  FOREIGN KEY(server_id)  REFERENCES account(id)
+    CONSTRAINT fk_online_account_server_id  FOREIGN KEY(server_id)  REFERENCES server (id)
 );
 
 CREATE TABLE IF NOT EXISTS server_account_history(
@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS report_reply(
 );
 
 CREATE TYPE punishment_issuer_type AS ENUM ('account', 'server');
+
+CREATE TYPE punishment_type AS ENUM ('ban', 'kick', 'warn', 'mute');
 
 CREATE TABLE IF NOT EXISTS punishment_issuer(
     id              SERIAL                 PRIMARY KEY,
@@ -191,7 +193,7 @@ CREATE TABLE IF NOT EXISTS warn(
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_warn_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_ban_issuer  FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
+    CONSTRAINT fk_warn_issuer FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
     CONSTRAINT fk_warn_server FOREIGN KEY(server_id)  REFERENCES server(id)
 );
 
@@ -206,7 +208,7 @@ CREATE TABLE IF NOT EXISTS mute(
     expiration_date TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_mute_user   FOREIGN KEY(account_id) REFERENCES account(id),
-    CONSTRAINT fk_ban_issuer  FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
+    CONSTRAINT fk_mute_issuer FOREIGN KEY(issuer_id)  REFERENCES punishment_issuer(id),
     CONSTRAINT fk_mute_server FOREIGN KEY(server_id)  REFERENCES server(id),
     CONSTRAINT chk_mute_expiration_after_creation CHECK (
         expiration_date IS NULL OR creation_date <= expiration_date
@@ -244,7 +246,7 @@ CREATE TABLE IF NOT EXISTS ip_blacklist(
     reason        TEXT        NOT NULL DEFAULT '',
     creation_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_ban_issuer FOREIGN KEY(issuer_id) REFERENCES punishment_issuer(id)
+    CONSTRAINT fk_blacklist_issuer FOREIGN KEY(issuer_id) REFERENCES punishment_issuer(id)
 );
 
 CREATE TABLE IF NOT EXISTS role(
@@ -299,25 +301,56 @@ CREATE TABLE IF NOT EXISTS role_permission(
     CONSTRAINT u_role_permission UNIQUE(role_id, permission_id)
 );
 
--- Insert Notify sender
-CREATE OR REPLACE FUNCTION notify_on_insert() RETURNS trigger AS $$
-DECLARE
-    channel_name text := 'channel_insert_' || TG_TABLE_NAME;
+CREATE TABLE IF NOT EXISTS punishment_queue(
+    id            SERIAL          PRIMARY KEY,
+    type          punishment_type NOT NULL,
+    creation_date TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Used for the automatic cleanup.
+--  Only ONE of them is non-null at a time, and it is decided by the type.
+    ban_id        INT             NULL UNIQUE,
+    warn_id       INT             NULL UNIQUE,
+    kick_id       INT             NULL UNIQUE,
+    mute_id       INT             NULL UNIQUE,
+    CONSTRAINT fk_ban  FOREIGN KEY(ban_id ) REFERENCES ban (id) ON DELETE CASCADE,
+    CONSTRAINT fk_warn FOREIGN KEY(warn_id) REFERENCES warn(id) ON DELETE CASCADE,
+    CONSTRAINT fk_kick FOREIGN KEY(kick_id) REFERENCES kick(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mute FOREIGN KEY(mute_id) REFERENCES mute(id) ON DELETE CASCADE
+);
+
+-- I'm forced to do it this way since I can't be sure when all the servers have read the queue or not.
+-- So the best strategy is to let the server acknowledge the queue so it knows it has already handled the row.
+-- Then after all servers had enough time to read the queue, I can remove the old elements from the queue.
+CREATE TABLE IF NOT EXISTS punishment_acknowledge(
+    queue_id  INT PRIMARY KEY,
+    server_id INT NOT NULL,
+    CONSTRAINT fk_queue  FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
+    CONSTRAINT fk_server FOREIGN KEY(server_id) REFERENCES server(id) ON DELETE CASCADE
+);
+
+-- I insert inside the punishment queue table.
+CREATE OR REPLACE FUNCTION insert_punishment_queue() RETURNS trigger AS $$
 BEGIN
-    PERFORM pg_notify(channel_name, NEW.id::text);
+    IF TG_TABLE_NAME    = 'ban'  THEN
+        INSERT INTO punishment_queue(type, ban_id ) VALUES ('ban', NEW.id);
+    ELSIF TG_TABLE_NAME = 'kick' THEN
+        INSERT INTO punishment_queue(type, kick_id) VALUES ('kick', NEW.id);
+    ELSIF TG_TABLE_NAME = 'warn' THEN
+        INSERT INTO punishment_queue(type, warn_id) VALUES ('warn', NEW.id);
+    ELSIF TG_TABLE_NAME = 'mute' THEN
+        INSERT INTO punishment_queue(type, mute_id) VALUES ('mute', NEW.id);
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Insert triggers
 CREATE TRIGGER notify_insert_ban AFTER INSERT ON ban
-FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+FOR EACH ROW EXECUTE FUNCTION insert_punishment_queue();
 
 CREATE TRIGGER notify_insert_kick AFTER INSERT ON kick
-FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+FOR EACH ROW EXECUTE FUNCTION insert_punishment_queue();
 
 CREATE TRIGGER notify_insert_warn AFTER INSERT ON warn
-FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+FOR EACH ROW EXECUTE FUNCTION insert_punishment_queue();
 
 CREATE TRIGGER notify_insert_mute AFTER INSERT ON mute
-FOR EACH ROW EXECUTE FUNCTION notify_on_insert();
+FOR EACH ROW EXECUTE FUNCTION insert_punishment_queue();

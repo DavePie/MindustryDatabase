@@ -1,5 +1,6 @@
 package net.ddns.mindustry.database.client;
 
+import net.ddns.mindustry.database.schema.enums.PunishmentType;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -54,6 +55,11 @@ public interface PunishmentQueries {
     Mute mute(Account punished, Issuer issuer, String reason, Server server, OffsetDateTime creation, OffsetDateTime expiration);
 
     Mute mute(Account punished, Issuer issuer, String reason, Server server, Duration duration);
+
+    /// Retrieves the elements from the punishments queue and acknowledges them using the server provided to avoid double elements.
+    List<Punishment> recentPunishments(PunishmentType type, Server server);
+
+    record Punishment(PunishmentType type, int id) {}
 
     /// @param unban the row of the issued unban.
     /// @param alreadyUnbanned true if the ban has already been unbanned, false if the ban has just been unbanned.

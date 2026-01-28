@@ -6,6 +6,7 @@ jna          = "5.16.0"
 jspecify     = "1.0.0"
 sqids        = "0.1.0"
 extra-module = "1.12"
+hikariCP     = "7.0.2"
 
 [plugins]
 jooqCodegen  = { id = "org.jooq.jooq-codegen-gradle"      , version.ref = "jooq"}
@@ -19,3 +20,4 @@ argon2     = { module = "de.mkammerer:argon2-jvm"          , version.ref = "argo
 jna        = { module = "net.java.dev.jna:jna"             , version.ref = "jna" }
 jspecify   = { module = "org.jspecify:jspecify"            , version.ref = "jspecify" }
 sqids      = { module = "org.sqids:sqids"                  , version.ref = "sqids" }
+hikariCP   = { module = "com.zaxxer:HikariCP"              , version.ref = "hikariCP" }

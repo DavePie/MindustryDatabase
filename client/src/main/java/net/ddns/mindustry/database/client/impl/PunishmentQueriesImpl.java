@@ -2,15 +2,14 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.enums.PunishmentIssuerType;
+import net.ddns.mindustry.database.schema.enums.PunishmentType;
 import net.ddns.mindustry.database.schema.tables.pojos.*;
 import org.jooq.DSLContext;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import static net.ddns.mindustry.database.schema.Tables.*;
 
 @NullMarked
@@ -346,5 +345,43 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
         Objects.requireNonNull(duration);
         final var now = OffsetDateTime.now();
         return muteQuery(punished, issuer, reason, server, now, now.plus(duration));
+    }
+
+    @Override
+    public List<Punishment> recentPunishments(PunishmentType type, Server server) {
+        return database().dsl().transactionResult(ctx -> {
+
+            final DSLContext tDsl = ctx.dsl();
+
+            // I clean up old queue elements that by this point all servers have handled.
+            final var deleteRange = OffsetDateTime.now().minusHours(4);
+            tDsl.delete(PUNISHMENT_QUEUE)
+                    .where(PUNISHMENT_QUEUE.CREATION_DATE.lessOrEqual(deleteRange))
+                    .execute();
+
+            final var results = tDsl.select(PUNISHMENT_QUEUE)
+                    .from(PUNISHMENT_QUEUE)
+                    .leftOuterJoin(PUNISHMENT_ACKNOWLEDGE).on(PUNISHMENT_QUEUE.ID.eq(PUNISHMENT_ACKNOWLEDGE.QUEUE_ID))
+                    .where(PUNISHMENT_QUEUE.TYPE.eq(type).and(PUNISHMENT_ACKNOWLEDGE.QUEUE_ID.isNull()))
+                    .fetchInto(PunishmentQueue.class);
+            if (results.isEmpty()) return List.of(); // Nothing to acknowledge.
+
+            final var punishments = new ArrayList<Punishment>();
+            var query = tDsl.insertInto(PUNISHMENT_ACKNOWLEDGE, PUNISHMENT_ACKNOWLEDGE.QUEUE_ID, PUNISHMENT_ACKNOWLEDGE.SERVER_ID);
+
+            for (var result : results) {
+                final int id = switch (result.type()) {
+                    case ban  -> result.banId();
+                    case kick -> result.kickId();
+                    case warn -> result.warnId();
+                    case mute -> result.muteId();
+                };
+                punishments.add(new Punishment(result.type(), id));
+                query = query.values(result.id(), server.id());
+            }
+            // I make this server acknowledge the queue to avoid retrieving already handled elements.
+            query.execute();
+            return punishments;
+        });
     }
 }

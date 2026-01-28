@@ -11,12 +11,13 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
-import net.ddns.mindustry.database.client.DatabaseEvents
+import net.ddns.mindustry.database.client.PunishmentListener
 import net.ddns.mindustry.database.client.PunishmentQueries.Issuer
 import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
+import net.ddns.mindustry.database.schema.enums.PunishmentType
 import net.ddns.mindustry.database.schema.tables.pojos.Account
 import net.ddns.mindustry.database.schema.tables.pojos.Warn
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -31,9 +32,9 @@ fun loadMindustryEvents() {
 }
 
 fun loadDatabaseEvents() {
-    database!!.events().register(DatabaseEvents.Type.WARN) {e -> playerWarn(e)}
-    database!!.events().register(DatabaseEvents.Type.KICK) {e -> playerKick(e)}
-    database!!.events().register(DatabaseEvents.Type.BAN) {e -> playerBan(e)}
+    database!!.listeners().register(PunishmentType.warn, /* provide the server */ ) { e -> playerWarn(e)}
+    database!!.listeners().register(PunishmentType.kick, /* provide the server */ ) { e -> playerKick(e)}
+    database!!.listeners().register(PunishmentType.ban , /* provide the server */ ) { e -> playerBan(e)}
 }
 
 private fun showWarn(warn: Warn, player: Player) {
@@ -54,9 +55,9 @@ private fun sharePunishment(action: String, account: Account, issuer: Issuer, se
             "[accent]Server[gray]:[white] $server")
 }
 
-private fun playerWarn(event: DatabaseEvents.Event) {
+private fun playerWarn(event: PunishmentListener.Event) {
     when (event) {
-        is DatabaseEvents.Event.Value -> {
+        is PunishmentListener.Event.Value -> {
             val warn = database!!.punishment().findWarn(event.id()).get()
             val account = database!!.account().find(warn.accountId()).get()
 
@@ -69,13 +70,13 @@ private fun playerWarn(event: DatabaseEvents.Event) {
             showWarn(warn, player)
         }
 
-        is DatabaseEvents.Event.Failure -> Log.err(event.exception())
+        is PunishmentListener.Event.Failure -> Log.err(event.exception())
     }
 }
 
-private fun playerKick(event: DatabaseEvents.Event) {
+private fun playerKick(event: PunishmentListener.Event) {
     when (event) {
-        is DatabaseEvents.Event.Value -> {
+        is PunishmentListener.Event.Value -> {
             val kick = database!!.punishment().findKick(event.id()).get()
             val account = database!!.account().find(kick.accountId()).get()
 
@@ -87,13 +88,13 @@ private fun playerKick(event: DatabaseEvents.Event) {
             player.kick(kick.reason())
         }
 
-        is DatabaseEvents.Event.Failure -> Log.err(event.exception())
+        is PunishmentListener.Event.Failure -> Log.err(event.exception())
     }
 }
 
-private fun playerBan(event: DatabaseEvents.Event) {
+private fun playerBan(event: PunishmentListener.Event) {
     when (event) {
-        is DatabaseEvents.Event.Value -> {
+        is PunishmentListener.Event.Value -> {
             val ban = database!!.punishment().findBan(event.id()).get()
             val account = database!!.account().find(ban.accountId()).get()
 
@@ -106,7 +107,7 @@ private fun playerBan(event: DatabaseEvents.Event) {
             obfuscateUsername(player)
         }
 
-        is DatabaseEvents.Event.Failure -> Log.err(event.exception())
+        is PunishmentListener.Event.Failure -> Log.err(event.exception())
     }
 }
 

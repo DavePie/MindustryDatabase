@@ -22,7 +22,7 @@ public interface Database extends AutoCloseable {
 
     AppealQueries appeal();
 
-    DatabaseEvents events();
+    PunishmentListener listeners();
 
     @Override
     void close() throws Exception;

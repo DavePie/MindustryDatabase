@@ -1,8 +1,8 @@
 package net.ddns.mindustry.database.testclient.tests;
 
 import net.ddns.mindustry.database.client.Database;
-import net.ddns.mindustry.database.client.DatabaseEvents;
 import net.ddns.mindustry.database.client.PunishmentQueries;
+import net.ddns.mindustry.database.schema.enums.PunishmentType;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.testclient.DbInitialization;
 import net.ddns.mindustry.database.testclient.data.MockAccount;
@@ -50,36 +50,44 @@ public final class PunishmentQueriesTest {
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void ban(String reason) {
+        final var server = MockServer.fromDb(db);
         EventCycle.verify(db,
-                DatabaseEvents.Type.BAN,
-                () -> db.punishment().ban(punished, staff, reason, MockServer.fromDb(db), Duration.ofDays(15)).id(),
+                PunishmentType.ban,
+                server,
+                () -> db.punishment().ban(punished, staff, reason, server, Duration.ofDays(15)).id(),
                 eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void kick(String reason) {
+        final var server = MockServer.fromDb(db);
         EventCycle.verify(db,
-                DatabaseEvents.Type.KICK,
-                () -> db.punishment().kick(punished, staff, reason, MockServer.fromDb(db)).id(),
+                PunishmentType.kick,
+                server,
+                () -> db.punishment().kick(punished, staff, reason, server).id(),
                 eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void warn(String reason) {
+        final var server = MockServer.fromDb(db);
         EventCycle.verify(db,
-                DatabaseEvents.Type.WARN,
-                () -> db.punishment().warn(punished, staff, reason, MockServer.fromDb(db)).id(),
+                PunishmentType.warn,
+                server,
+                () -> db.punishment().warn(punished, staff, reason, server).id(),
                 eventTimeout);
     }
 
     @ParameterizedTest
     @MethodSource("net.ddns.mindustry.database.testclient.data.MockMessages#reasons")
     void mute(String reason) {
+        final var server = MockServer.fromDb(db);
         EventCycle.verify(db,
-                DatabaseEvents.Type.MUTE,
-                () -> db.punishment().mute(punished, staff, reason, MockServer.fromDb(db), Duration.of(5, ChronoUnit.DAYS)).id(),
+                PunishmentType.mute,
+                server,
+                () -> db.punishment().mute(punished, staff, reason, server, Duration.of(5, ChronoUnit.DAYS)).id(),
                 eventTimeout);
     }
 

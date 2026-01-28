@@ -7,6 +7,8 @@ module net.ddns.mindustry.database.client {
     requires org.jooq.postgres.extensions;
     requires org.jspecify;
     requires sqids;
+    requires com.zaxxer.hikari;
     exports net.ddns.mindustry.database.client;
     exports net.ddns.mindustry.database.schema.tables.pojos;
+    exports net.ddns.mindustry.database.schema.enums;
 }

@@ -20,14 +20,12 @@ ext{
     //the build number that this plugin is made for
     mindustryVersion = 'v154'
     jabelVersion = "93fde537c7"
-
     segment = "v0.1.0"
 }
 
 tasks.withType(Jar).configureEach {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
-
 
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
@@ -39,13 +37,13 @@ dependencies{
 
     implementation libs.jooq
     implementation libs.jooqExt
-    implementation "org.jetbrains.kotlin:kotlin-reflect:2.1.10"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.3.0"
 }
 
 jar{
     dependsOn(":client:jar")
 
-    archiveFileName = "${project.archivesBaseName}.jar"
+    archiveFileName = "${base.archivesName}.jar"
     from{
         configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
     }
@@ -61,7 +59,7 @@ java {
 //    distributionType = Wrapper.DistributionType.ALL
 //}
 buildscript {
-    ext.kotlin_version = '2.1.10'
+    ext.kotlin_version = '2.3.0'
     repositories {
         mavenCentral()
     }
@@ -70,5 +68,5 @@ buildscript {
     }
 }
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
