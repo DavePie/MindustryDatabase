@@ -2,9 +2,7 @@ package net.ddns.mindustry.database.client.impl;
 
 import net.ddns.mindustry.database.client.ConfigQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
-import org.jooq.DSLContext;
-import org.jooq.JSONB;
-import org.jooq.Record1;
+import org.jooq.*;
 import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 import static net.ddns.mindustry.database.schema.Tables.CONFIGURATION;
@@ -17,11 +15,16 @@ public record ConfigQueriesImpl(DatabaseImpl database) implements ConfigQueries 
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
+        final var json = JSONB.valueOf(value);
+
         database.dsl().transaction(connection -> {
             final DSLContext tDsl = connection.dsl();
             tDsl.insertInto(CONFIGURATION)
                     .set(CONFIGURATION.KEY, key)
-                    .set(CONFIGURATION.VALUE, JSONB.valueOf(value))
+                    .set(CONFIGURATION.VALUE, json)
+                    .onConflict(CONFIGURATION.KEY, CONFIGURATION.SERVER_ID)
+                    .doUpdate()
+                    .set(CONFIGURATION.VALUE, json)
                     .execute();
         });
     }
@@ -33,12 +36,17 @@ public record ConfigQueriesImpl(DatabaseImpl database) implements ConfigQueries 
         Objects.requireNonNull(value);
         Objects.requireNonNull(server);
 
+        final var json = JSONB.valueOf(value);
+
         database.dsl().transaction(connection -> {
             final DSLContext tDsl = connection.dsl();
             tDsl.insertInto(CONFIGURATION)
                     .set(CONFIGURATION.KEY, key)
-                    .set(CONFIGURATION.VALUE, JSONB.valueOf(value))
+                    .set(CONFIGURATION.VALUE, json)
                     .set(CONFIGURATION.SERVER_ID, server.id())
+                    .onConflict(CONFIGURATION.KEY, CONFIGURATION.SERVER_ID)
+                    .doUpdate()
+                    .set(CONFIGURATION.VALUE, json)
                     .execute();
         });
     }
