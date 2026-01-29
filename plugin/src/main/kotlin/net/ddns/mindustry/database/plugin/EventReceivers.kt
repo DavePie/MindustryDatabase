@@ -11,6 +11,7 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.net.Administration.Config
 import net.ddns.mindustry.database.client.PunishmentListener
 import net.ddns.mindustry.database.client.PunishmentQueries.Issuer
 import net.ddns.mindustry.database.client.ServerAccountQueries
@@ -32,9 +33,17 @@ fun loadMindustryEvents() {
 }
 
 fun loadDatabaseEvents() {
-    database!!.listeners().register(PunishmentType.warn, /* provide the server */ ) { e -> playerWarn(e)}
-    database!!.listeners().register(PunishmentType.kick, /* provide the server */ ) { e -> playerKick(e)}
-    database!!.listeners().register(PunishmentType.ban , /* provide the server */ ) { e -> playerBan(e)}
+    val server = database!!.server().find(configServerIP.string(), Config.port.num())
+
+    if (server.isEmpty) {
+        Log.warn("Not loading database events. Server configuration either corrupt or server not registered in " +
+                "database.")
+        return
+    }
+
+    database!!.listeners().register(PunishmentType.warn, server.get()) { e -> playerWarn(e)}
+    database!!.listeners().register(PunishmentType.kick, server.get()) { e -> playerKick(e)}
+    database!!.listeners().register(PunishmentType.ban , server.get()) { e -> playerBan(e)}
 }
 
 private fun showWarn(warn: Warn, player: Player) {
