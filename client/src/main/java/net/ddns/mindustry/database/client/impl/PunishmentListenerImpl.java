@@ -5,7 +5,6 @@ import net.ddns.mindustry.database.client.PunishmentQueries;
 import net.ddns.mindustry.database.schema.enums.PunishmentType;
 import net.ddns.mindustry.database.schema.tables.pojos.Server;
 import org.jspecify.annotations.NullMarked;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,7 +22,7 @@ public final class PunishmentListenerImpl implements PunishmentListener, AutoClo
     private final DatabaseImpl database;
     private final ScheduledFuture<?> notificationThread;
 
-    public PunishmentListenerImpl(DatabaseImpl database) throws SQLException {
+    public PunishmentListenerImpl(DatabaseImpl database) {
         this.database = Objects.requireNonNull(database);
         this.notificationThread = executor.scheduleAtFixedRate(this::checkUpdates, 2, 2, TimeUnit.SECONDS);
     }

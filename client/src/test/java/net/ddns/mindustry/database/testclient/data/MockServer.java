@@ -11,6 +11,7 @@ public record MockServer(String ip, int port, String name) {
         return new MockServer("127.0.0.1", 8312, "some_server");
     }
 
+    // TODO Make this an instance method instead of a static one? If the data changes the tests are going to fail on mass...
     /// Retrieves the server row using the instance data.\
     /// If the instance data is not saved on the db, this method will fail.
     public static Server fromDb(Database con) {

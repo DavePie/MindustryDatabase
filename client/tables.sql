@@ -310,10 +310,10 @@ CREATE TABLE IF NOT EXISTS punishment_queue(
     warn_id       INT             NULL UNIQUE,
     kick_id       INT             NULL UNIQUE,
     mute_id       INT             NULL UNIQUE,
-    CONSTRAINT fk_ban  FOREIGN KEY(ban_id ) REFERENCES ban (id) ON DELETE CASCADE,
-    CONSTRAINT fk_warn FOREIGN KEY(warn_id) REFERENCES warn(id) ON DELETE CASCADE,
-    CONSTRAINT fk_kick FOREIGN KEY(kick_id) REFERENCES kick(id) ON DELETE CASCADE,
-    CONSTRAINT fk_mute FOREIGN KEY(mute_id) REFERENCES mute(id) ON DELETE CASCADE
+    CONSTRAINT fk_ban_queue  FOREIGN KEY(ban_id ) REFERENCES ban (id) ON DELETE CASCADE,
+    CONSTRAINT fk_warn_queue FOREIGN KEY(warn_id) REFERENCES warn(id) ON DELETE CASCADE,
+    CONSTRAINT fk_kick_queue FOREIGN KEY(kick_id) REFERENCES kick(id) ON DELETE CASCADE,
+    CONSTRAINT fk_mute_queue FOREIGN KEY(mute_id) REFERENCES mute(id) ON DELETE CASCADE
 );
 
 -- I'm forced to do it this way since I can't be sure when all the servers have read the queue or not.
@@ -322,8 +322,17 @@ CREATE TABLE IF NOT EXISTS punishment_queue(
 CREATE TABLE IF NOT EXISTS punishment_acknowledge(
     queue_id  INT PRIMARY KEY,
     server_id INT NOT NULL,
-    CONSTRAINT fk_queue  FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
-    CONSTRAINT fk_server FOREIGN KEY(server_id) REFERENCES server(id) ON DELETE CASCADE
+    CONSTRAINT fk_punishment_queue FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
+    CONSTRAINT fk_server_ack       FOREIGN KEY(server_id) REFERENCES server(id)           ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS configuration(
+    id        SERIAL PRIMARY KEY,
+    key       TEXT   NOT NULL,
+    server_id INT    NULL DEFAULT NULL, -- For server-specific configuration, for global configuration null should be used.
+    value     JSONB  NOT NULL,
+    CONSTRAINT fk_server_config    FOREIGN KEY(server_id) REFERENCES server(id) ON DELETE CASCADE,
+    CONSTRAINT u_key_server_config UNIQUE NULLS NOT DISTINCT(key, server_id)
 );
 
 -- I insert inside the punishment queue table.

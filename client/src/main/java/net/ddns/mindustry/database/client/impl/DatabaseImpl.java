@@ -9,7 +9,6 @@ import org.jooq.postgres.extensions.types.Inet;
 import org.postgresql.Driver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -18,7 +17,7 @@ public final class DatabaseImpl implements Database {
 
     private final HikariDataSource ds;
     private final DSLContext dsl;
-    private final SecurityConfig config;
+    private final SecurityConfig securityConfig;
     private final AccountQueriesImpl auth;
     private final ServerQueriesImpl server;
     private final ServerAccountQueriesImpl serverAccount;
@@ -26,22 +25,21 @@ public final class DatabaseImpl implements Database {
     private final RoleQueriesImpl role;
     private final AppealQueriesImpl appeal;
     private final PunishmentListenerImpl databaseEvents;
+    private final ConfigQueriesImpl config;
 
     public DatabaseImpl(String url, String username, String password, SecurityConfig config) {
         this.ds = createDataSource(url, username, password);
         this.dsl = DSL.using(ds, SQLDialect.POSTGRES);
-        this.config = Objects.requireNonNull(config);
+        this.securityConfig = Objects.requireNonNull(config);
         this.auth = new AccountQueriesImpl(this);
         this.server = new ServerQueriesImpl(this);
         this.serverAccount = new ServerAccountQueriesImpl(this);
         this.punishment = new PunishmentQueriesImpl(this);
         this.role = new RoleQueriesImpl(this);
         this.appeal = new AppealQueriesImpl(this);
+        this.config = new ConfigQueriesImpl(this);
         // Must be last since it uses the classes above during initialization.
-        try { this.databaseEvents = new PunishmentListenerImpl(this);
-        } catch (SQLException e) {
-            throw new RuntimeException("Could not start the database event listener task.", e);
-        }
+        this.databaseEvents = new PunishmentListenerImpl(this);
     }
 
     private static HikariDataSource createDataSource(String url, String username, String password) {
@@ -90,7 +88,7 @@ public final class DatabaseImpl implements Database {
 
     @Override
     public SecurityConfig securityConfig() {
-        return config;
+        return securityConfig;
     }
 
     @Override
@@ -126,6 +124,11 @@ public final class DatabaseImpl implements Database {
     @Override
     public PunishmentListenerImpl listeners() {
         return databaseEvents;
+    }
+
+    @Override
+    public ConfigQueries config() {
+        return config;
     }
 
     @Override

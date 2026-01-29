@@ -24,6 +24,8 @@ public interface Database extends AutoCloseable {
 
     PunishmentListener listeners();
 
+    ConfigQueries config();
+
     @Override
     void close() throws Exception;
 }

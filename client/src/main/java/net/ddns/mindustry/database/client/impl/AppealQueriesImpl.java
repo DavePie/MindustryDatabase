@@ -4,7 +4,6 @@ import net.ddns.mindustry.database.client.AppealQueries;
 import net.ddns.mindustry.database.schema.tables.pojos.Account;
 import net.ddns.mindustry.database.schema.tables.pojos.Appeal;
 import net.ddns.mindustry.database.schema.tables.pojos.AppealReply;
-import org.jspecify.annotations.NullMarked;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Optional;
 import static net.ddns.mindustry.database.schema.Tables.APPEAL;
 import static net.ddns.mindustry.database.schema.Tables.APPEAL_REPLY;
 
-@NullMarked
 public record AppealQueriesImpl(DatabaseImpl database) implements AppealQueries {
 
     @Override
