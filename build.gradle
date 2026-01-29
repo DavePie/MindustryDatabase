@@ -30,6 +30,10 @@ java {
     withJavadocJar()
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
