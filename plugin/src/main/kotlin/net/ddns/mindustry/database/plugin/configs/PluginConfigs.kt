@@ -4,9 +4,9 @@ import mindustry.net.Administration.Config
 
 class PluginConfigs : ReloadableConfig() {
     companion object Configs {
-        val configURL = Config("url", "The URL for the database.", "")
-        val configUser = Config("user", "The user for the database.", "")
-        val configPassword = Config("password", "The password for the database user.", "")
+//        val configURL = Config("url", "The URL for the database.", "")
+//        val configUser = Config("user", "The user for the database.", "")
+//        val configPassword = Config("password", "The password for the database user.", "")
         val configAccountLimit = Config(
             "account-limit", "The maximum number of accounts that a player can" +
                     " have.", 5

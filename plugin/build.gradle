@@ -1,3 +1,17 @@
+buildscript {
+    ext.kotlin_version = '2.3.0'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.3.21'
+}
+
 apply plugin: "java"
 apply plugin: 'maven-publish'
 apply plugin: 'kotlin'
@@ -38,6 +52,9 @@ dependencies{
     implementation libs.jooq
     implementation libs.jooqExt
     implementation "org.jetbrains.kotlin:kotlin-reflect:2.3.0"
+
+    implementation 'com.akuleshov7:ktoml-core:0.7.1'
+    implementation 'com.akuleshov7:ktoml-file:0.7.1'
 }
 
 jar{
@@ -58,15 +75,7 @@ java {
 //    gradleVersion = "7.3.3"
 //    distributionType = Wrapper.DistributionType.ALL
 //}
-buildscript {
-    ext.kotlin_version = '2.3.0'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
+
 kotlin {
     jvmToolchain(25)
 }

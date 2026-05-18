@@ -10,10 +10,8 @@ import net.ddns.mindustry.database.client.SecurityConfig
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.commands.BaseCommand
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configAccountLimit
-import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
-import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configURL
-import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configUser
 import net.ddns.mindustry.database.plugin.configs.ReloadableConfig.Configs.reloadConfigs
+import net.ddns.mindustry.database.plugin.configs.toml.databaseInfo
 import net.ddns.mindustry.database.schema.tables.pojos.Account
 import net.ddns.mindustry.database.schema.tables.pojos.Ban
 import java.security.NoSuchAlgorithmException
@@ -45,8 +43,8 @@ fun newDatabase(): Database? {
 
     try {
         database = Database.newConnection(
-            "jdbc:postgresql://" + configURL.string() + "/mindustry_database",
-            configUser.string(), configPassword.string(), securityConfig
+            "jdbc:postgresql://" + databaseInfo!!.url + "/mindustry_database",
+            databaseInfo!!.username, databaseInfo!!.password, securityConfig
         )
     } catch (e: Exception) {
         Log.debug(e)
@@ -77,6 +75,8 @@ fun restartConfigDependentFeatures() {
 }
 
 fun registerCommands(commandList: List<KClass<out BaseCommand>>, handler: CommandHandler) {
+//    if (database == null) { return }
+
     for (command in commandList) {
         command.primaryConstructor!!.call(handler)
     }

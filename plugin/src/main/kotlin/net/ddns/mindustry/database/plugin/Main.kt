@@ -9,11 +9,16 @@ import net.ddns.mindustry.database.plugin.commands.client.unprivileged.Unprivile
 import net.ddns.mindustry.database.plugin.commands.server.ServerCommand
 import net.ddns.mindustry.database.plugin.commands.server.permissions.BasePermissionCommand
 import net.ddns.mindustry.database.plugin.commands.server.roles.BaseRoleCommand
+import net.ddns.mindustry.database.plugin.configs.toml.loadToml
 import java.util.logging.LogManager
 
 @Suppress("unused")
 class Main : Plugin() {
     companion object {
+        init {
+            loadToml()
+        }
+
         var database: Database? = null
         var unprivilegedClientCommands = UnprivilegedClientCommand::class.sealedSubclasses
         var privilegedClientCommands = PrivilegedClientCommand::class.sealedSubclasses
@@ -28,7 +33,6 @@ class Main : Plugin() {
         LogManager.getLogManager().reset()
         // https://stackoverflow.com/a/5762502
         Log.info("\u001B[34mPowered by jOOQ.\u001B[0m")
-
         loadMindustryEvents()
         loadChatFilters()
         loadActionFilters()
@@ -49,9 +53,6 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerCommands(unprivilegedClientCommands, handler)
-
-        if (database == null) return
-
         registerCommands(privilegedClientCommands, handler)
     }
 

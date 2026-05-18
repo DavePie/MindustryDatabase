@@ -2,7 +2,6 @@ package net.ddns.mindustry.database.plugin.commands.server
 
 import arc.util.CommandHandler
 import arc.util.Log
-import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configPassword
 import net.ddns.mindustry.database.plugin.restartConfigDependentFeatures
 
 class RemovePassword(handler: CommandHandler) : ServerCommand(handler) {
@@ -13,8 +12,10 @@ class RemovePassword(handler: CommandHandler) : ServerCommand(handler) {
     }
 
     override fun runner(args: Array<String>) {
-        configPassword.set("")
-        restartConfigDependentFeatures()
-        Log.info("Removed password configuration.")
+        Log.warn("This command is deprecated. It will NOT do anything. Please edit your config.toml to change the" +
+                " password.")
+//        configPassword.set("")
+//        restartConfigDependentFeatures()
+//        Log.info("Removed password configuration.")
     }
 }
