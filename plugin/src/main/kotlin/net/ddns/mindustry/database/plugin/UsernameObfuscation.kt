@@ -6,7 +6,9 @@ import mindustry.gen.Player
 private val usernameMap: MutableMap<String, String> = mutableMapOf()
 
 fun obfuscateUsername(player: Player) {
-    usernameMap[player.uuid()] = player.coloredName()
+    if (!usernameMap.contains(player.uuid())) {
+        usernameMap[player.uuid()] = player.coloredName()
+    }
     player.name("")
 }
 
@@ -17,7 +19,7 @@ fun deobfuscateUsername(player: Player) {
     }
 
     player.name(usernameMap[player.uuid()])
-    usernameMap.remove(player.uuid())
+//    usernameMap.remove(player.uuid())
 }
 
 fun removeUsername(player: Player) {
