@@ -6,6 +6,8 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import net.ddns.mindustry.database.client.AccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
+import net.ddns.mindustry.segment.ui.Child
+import net.ddns.mindustry.segment.ui.textInput.BaseTextInput
 
 class ChangePassword(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     companion object {
@@ -23,27 +25,32 @@ class ChangePassword(handler: CommandHandler) : UnprivilegedClientCommand(handle
         ).show()
     }
 
-    private fun callbackChangePasswordCurrentPassword(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackChangePasswordCurrentPassword(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling password change at current password step.")
             return
         }
 
-        textInputHandler.addTextInput(
+        val textInput = textInputHandler.addTextInput(
             "[gold]Change password (2/2)",
             "Type in the new password",
             ::callbackChangePasswordNewPassword,
-            args = arrayOf(text)
-        ).show()
+        )
+        textInput.args[0] = child.text!!
+        textInput.show()
     }
 
-    private fun callbackChangePasswordNewPassword(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackChangePasswordNewPassword(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling password change at password step.")
             return
         }
 
-        val oldPassword = args[0]
+        val oldPassword = child.args[0]
         val account = database!!.account().find(player.ip(), player.uuid())
 
         if (account.isEmpty) {
@@ -51,7 +58,7 @@ class ChangePassword(handler: CommandHandler) : UnprivilegedClientCommand(handle
             return
         }
 
-        val result = database!!.account().updatePassword(account.get(), oldPassword.toCharArray(), text.toCharArray())
+        val result = database!!.account().updatePassword(account.get(), oldPassword.toCharArray(), child.text!!.toCharArray())
 
         when (result) {
             is AccountQueries.PasswordUpdateStatus.WrongPassword -> Call.infoMessage(player.con(), "[scarlet]" +

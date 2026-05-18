@@ -18,9 +18,9 @@ repositories{
 
 ext{
     //the build number that this plugin is made for
-    mindustryVersion = 'v154'
+    mindustryVersion = 'v157.4'
     jabelVersion = "93fde537c7"
-    segment = "v0.1.0"
+    segment = "0.2.1"
 }
 
 tasks.withType(Jar).configureEach {

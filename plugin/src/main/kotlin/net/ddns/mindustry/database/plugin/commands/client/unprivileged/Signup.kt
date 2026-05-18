@@ -7,6 +7,8 @@ import mindustry.gen.Player
 import net.ddns.mindustry.database.client.AccountQueries.SignupStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSessionDuration
+import net.ddns.mindustry.segment.ui.Child
+import net.ddns.mindustry.segment.ui.textInput.BaseTextInput
 import java.time.Duration
 
 class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
@@ -26,13 +28,15 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         ).show(player.con())
     }
 
-    private fun callbackSignupUsername(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackSignupUsername(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling signup at username step.")
             return
         }
 
-        playerToUsernameMap[player] = text
+        playerToUsernameMap[player] = child.text!!
 
         textInputHandler.addTextInput(
             "[gold]Signup (2/2)",
@@ -41,8 +45,10 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         ).show(player.con())
     }
 
-    private fun callbackSignupPassword(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackSignupPassword(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling signup at password step.")
             return
         }
@@ -52,7 +58,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToUsernameMap.remove(player)
         playerToDisplayName.remove(player)
 
-        val signupStatus = database!!.account().signup(username!!, text.toCharArray(), player.ip(), player.uuid(),
+        val signupStatus = database!!.account().signup(username!!, child.text!!.toCharArray(), player.ip(), player.uuid(),
             Duration.ofHours(configSessionDuration.num().toLong()))
 
         when (signupStatus) {

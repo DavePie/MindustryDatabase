@@ -10,6 +10,8 @@ import net.ddns.mindustry.database.client.AccountQueries.LoginStatus.*
 import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configSessionDuration
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
+import net.ddns.mindustry.segment.ui.Child
+import net.ddns.mindustry.segment.ui.textInput.BaseTextInput
 import java.time.Duration
 
 class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
@@ -31,13 +33,15 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         ).show(player.con())
     }
 
-    private fun callbackLoginUsername(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackLoginUsername(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling login at username step.")
             return
         }
 
-        playerToUsernameMap[player] = text
+        playerToUsernameMap[player] = child.text!!
 
         textInputHandler.addTextInput(
             "[gold]Login (2/2)",
@@ -46,8 +50,10 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         ).show(player.con())
     }
 
-    private fun callbackLoginPassword(player: Player, text: String?, args: Array<String>) {
-        if (text == null) {
+    private fun callbackLoginPassword(player: Player, child: Child) {
+        if (child !is BaseTextInput) { return }
+
+        if (child.text == null) {
             Log.warn("Cancelling login at password step.")
             playerToUsernameMap.remove(player)
             return
@@ -57,7 +63,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToUsernameMap.remove(player)
 
         val loginResult = database!!.account().login(
-            username!!, text.toCharArray(), player.ip(),
+            username!!, child.text!!.toCharArray(), player.ip(),
             player.uuid(), Duration.ofHours(configSessionDuration.num().toLong())
         )
 
