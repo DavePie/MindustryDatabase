@@ -22,7 +22,8 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     override fun runner(arguments: Array<String>, player: Player) {
         textInputHandler.addTextInput(
             "[gold]Signup (1/2)",
-            "Type in the username you'll use for your account (this [scarlet]cannot[] be changed)",
+            "Type in the username you'll use for your account (this [scarlet]cannot[] be changed; username " +
+                    "must be lowercase.)",
             ::callbackSignupUsername,
             32
         ).show(player.con())

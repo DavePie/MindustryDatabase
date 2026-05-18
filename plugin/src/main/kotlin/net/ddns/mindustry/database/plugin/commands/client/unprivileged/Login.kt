@@ -25,7 +25,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     override fun runner(arguments: Array<String>, player: Player) {
         textInputHandler.addTextInput(
             "[gold]Login (1/2)",
-            "Type in your username",
+            "Type in your username (must be lowercase!)",
             ::callbackLoginUsername,
             32,
             "",
