@@ -25,7 +25,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     override fun runner(arguments: Array<String>, player: Player) {
         textInputHandler.addTextInput(
             "[gold]Login (1/2)",
-            "Type in your username (must be lowercase!)",
+            "Type in your username (not case sensitive)",
             ::callbackLoginUsername,
             32,
             "",
@@ -63,7 +63,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToUsernameMap.remove(player)
 
         val loginResult = database!!.account().login(
-            username!!, child.text!!.toCharArray(), player.ip(),
+            username!!.lowercase(), child.text!!.toCharArray(), player.ip(),
             player.uuid(), Duration.ofHours(configSessionDuration.num().toLong())
         )
 

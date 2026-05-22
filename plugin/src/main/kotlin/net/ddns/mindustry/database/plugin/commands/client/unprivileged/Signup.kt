@@ -22,8 +22,8 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     override fun runner(arguments: Array<String>, player: Player) {
         textInputHandler.addTextInput(
             "[gold]Signup (1/2)",
-            "Type in the username you'll use for your account (this [scarlet]cannot[] be changed; username " +
-                    "must be lowercase.)",
+            "Type in the username you'll use for your account (this [scarlet]cannot[] be changed; not case " +
+                    "sensitive)",
             ::callbackSignupUsername,
             32
         ).show(player.con())
@@ -59,8 +59,8 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         playerToUsernameMap.remove(player)
         playerToDisplayName.remove(player)
 
-        val signupStatus = database!!.account().signup(username!!, child.text!!.toCharArray(), player.ip(), player.uuid(),
-            Duration.ofHours(configSessionDuration.num().toLong()))
+        val signupStatus = database!!.account().signup(username!!.lowercase(), child.text!!.toCharArray(),
+            player.ip(), player.uuid(), Duration.ofHours(configSessionDuration.num().toLong()))
 
         when (signupStatus) {
             is UsernameInUse -> {
