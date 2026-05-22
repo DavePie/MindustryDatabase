@@ -27,9 +27,7 @@ class Login(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             "[gold]Login (1/2)",
             "Type in your username (not case sensitive)",
             ::callbackLoginUsername,
-            32,
-            "",
-            false
+            15 // max username size is 15
         ).show(player.con())
     }
 

@@ -25,7 +25,7 @@ class Signup(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
             "Type in the username you'll use for your account (this [scarlet]cannot[] be changed; not case " +
                     "sensitive)",
             ::callbackSignupUsername,
-            32
+            15 // max username size is 15
         ).show(player.con())
     }
 
