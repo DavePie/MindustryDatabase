@@ -134,6 +134,11 @@ public record AccountQueriesImpl(DatabaseImpl database, MessageDigest digest) im
         final String dbHash = new String(account.password(), StandardCharsets.UTF_8);
         if (!security.argon2().verify(dbHash, password)) return new LoginStatus.WrongCredentials();
 
+        final OptionalInt sessionAccount = sessionAccountId(tDsl, session);
+        if (sessionAccount.isPresent() && sessionAccount.getAsInt() == account.id()) {
+            return new LoginStatus.AlreadyLoggedIn();
+        }
+
         tDsl.update(ACCOUNT)
                 // I update the password with the latest argon2 configuration.
                 .set(ACCOUNT.PASSWORD, hashedPassword)
