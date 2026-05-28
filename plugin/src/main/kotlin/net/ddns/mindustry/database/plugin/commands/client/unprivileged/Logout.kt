@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import mindustry.game.Team
 import mindustry.gen.Player
 import net.ddns.mindustry.database.plugin.Main.Companion.database
-import net.ddns.mindustry.database.plugin.obfuscateUsername
+import net.ddns.mindustry.database.plugin.PlayerName
 
 class Logout(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
     companion object {
@@ -25,7 +25,8 @@ class Logout(handler: CommandHandler) : UnprivilegedClientCommand(handler) {
         database!!.account().logout(account.get())
         player.team(Team.derelict)
         player.unit().kill()
-        obfuscateUsername(player)
+        PlayerName.setTag(player, null)
+        PlayerName.hide(player)
         player.sendMessage("Logged out successfully.")
     }
 }

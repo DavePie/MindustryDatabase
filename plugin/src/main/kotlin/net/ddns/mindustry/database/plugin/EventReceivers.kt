@@ -114,7 +114,7 @@ private fun playerBan(event: PunishmentListener.Event) {
 
             val player = findOnlinePlayer(account.username) ?: return
             Call.infoMessage(player.con(), formatBan(account, ban))
-            obfuscateUsername(player)
+            PlayerName.hide(player)
         }
 
         is PunishmentListener.Event.Failure -> Log.err(event.exception())
@@ -123,6 +123,9 @@ private fun playerBan(event: PunishmentListener.Event) {
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun playerConnect(event: PlayerConnect) {
+
+    PlayerName.capture(event.player)
+
     val port = Administration.Config.port.num()
     val server = database!!.server().find(configServerIP.string(), port)
 
@@ -139,7 +142,7 @@ private fun playerConnect(event: PlayerConnect) {
             Call.infoMessage(event.player.con(), "You are not logged in. Please log in using the [gold]/login[]" +
                     " command or signup with the [gold]/signup[] command.")
             event.player.team(Team.derelict)
-            obfuscateUsername(event.player)
+            PlayerName.hide(event.player)
         }
 
         is ServerAccountQueries.JoinStatus.AlreadyInServer -> event.player.kick("You're already in one of the servers!", 0)
@@ -166,17 +169,23 @@ private fun playerLogin(event: PlayerLogin) {
         // since there are multiple ways for a player to login, there's also a case for when it isn't null
         if (message != null) Call.infoMessage(event.player.con(), message)
         else event.player.sendMessage(String.format("[scarlet]You are banned! Reason: %s", bans[0].reason))
-        obfuscateUsername(event.player)
-    } else if (event.player.name().isEmpty()) {
-        deobfuscateUsername(event.player)
+        PlayerName.hide(event.player)
+    } else if (PlayerName.isHidden(event.player)) {
+        PlayerName.show(event.player)
         Call.sendMessage("[accent]${event.player.plainName()} has connected.")
     }
 
-    val roles = database!!.role().accountRoles(event.account)
-    if (roles.isNotEmpty()) {
-        roles.sortByDescending { role -> role.priority }
-        event.player.name(String.format("[accent]<[white]%s[accent]>[white] %s", roles[0].symbol, event.player.name()))
+    applyRoleTag(event.player, event.account)
+}
+
+fun applyRoleTag(player: Player, account: Account) {
+    val roles = database!!.role().accountRoles(account)
+    if (roles.isEmpty()) {
+        PlayerName.setTag(player, null)
+        return
     }
+    roles.sortByDescending { role -> role.priority }
+    PlayerName.setTag(player, roles[0].symbol)
 }
 
 private fun playerLeave(event: PlayerLeave) {
@@ -189,7 +198,7 @@ private fun playerLeave(event: PlayerLeave) {
     val port = Administration.Config.port.num()
     val server = database!!.server().find(configServerIP.string(), port)
     database!!.serverAccount().leavesServer(account.get(), server.get())
-    removeUsername(event.player)
+    PlayerName.forget(event.player)
 }
 
 private fun gameOver(event: StateChangeEvent) {

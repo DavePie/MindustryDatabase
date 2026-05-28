@@ -3,6 +3,8 @@ package net.ddns.mindustry.database.plugin.commands.server.roles
 import arc.util.CommandHandler
 import arc.util.Log
 import net.ddns.mindustry.database.plugin.Main.Companion.database
+import net.ddns.mindustry.database.plugin.applyRoleTag
+import net.ddns.mindustry.database.plugin.findOnlinePlayer
 
 class GrantRole(handler: CommandHandler) : BaseRoleCommand(handler) {
     companion object {
@@ -28,6 +30,8 @@ class GrantRole(handler: CommandHandler) : BaseRoleCommand(handler) {
         }
 
         database!!.role().grantRoles(account.get(), role.get())
+
+        findOnlinePlayer(account.get().username)?.let { applyRoleTag(it, account.get()) }
         Log.info("Role granted.")
     }
 }
