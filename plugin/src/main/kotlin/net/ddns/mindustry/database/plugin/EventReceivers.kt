@@ -94,7 +94,8 @@ private fun playerKick(event: PunishmentListener.Event) {
             sharePunishment("Kick", account, issuer.get(), server.get().name())
 
             val player = findOnlinePlayer(account.username) ?: return
-            player.kick(kick.reason())
+            Call.kick(player.con(), kick.reason())
+//            player.kick(kick.reason())
         }
 
         is PunishmentListener.Event.Failure -> Log.err(event.exception())
