@@ -23,6 +23,9 @@ class PluginConfigs : ReloadableConfig() {
         val configCommandAttempts = Config("command-attempts", "The number of attempts that are" +
                 " recorded for the rate limit.", 5)
 
+        val configTileHistoryLimit = Config("tile-history-limit", "The maximum number of tile" +
+                " actions kept in the in-memory history before the oldest are discarded.", 10000)
+
 //        val configRoleConfigPath = Config(
 //            "roles-config-path", "The path to the configuration file for roles.",
 //            "config/mindustry_database/roles_config.yaml"

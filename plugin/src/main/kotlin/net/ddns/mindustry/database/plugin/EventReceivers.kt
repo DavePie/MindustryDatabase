@@ -7,6 +7,8 @@ import mindustry.game.EventType.PlayerConnect
 import mindustry.game.EventType.PlayerLeave
 import mindustry.game.EventType.PlayEvent
 import mindustry.game.EventType.StateChangeEvent
+import mindustry.game.EventType.TapEvent
+import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Player
@@ -16,6 +18,7 @@ import net.ddns.mindustry.database.client.PunishmentListener
 import net.ddns.mindustry.database.client.PunishmentQueries.Issuer
 import net.ddns.mindustry.database.client.ServerAccountQueries
 import net.ddns.mindustry.database.plugin.Main.Companion.database
+import net.ddns.mindustry.database.plugin.commands.client.unprivileged.History
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
 import net.ddns.mindustry.database.schema.enums.PunishmentType
@@ -30,6 +33,17 @@ fun loadMindustryEvents() {
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
     Events.on(PlayEvent::class.java) {_ -> startHeartbeatScheduler()}
     Events.on(StateChangeEvent::class.java) {e -> gameOver(e)}
+
+    Events.on(TapEvent::class.java) {e -> tileTapped(e)}
+    Events.on(WorldLoadEvent::class.java) {_ -> TileHistoryStore.clear()}
+}
+
+private fun tileTapped(event: TapEvent) {
+    if (event.tile == null || !History.inspecting.contains(event.player.uuid())) {
+        return
+    }
+
+    event.player.sendMessage(renderTileHistory(event.tile.x.toInt(), event.tile.y.toInt()))
 }
 
 fun loadDatabaseEvents() {
