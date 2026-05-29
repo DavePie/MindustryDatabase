@@ -59,12 +59,8 @@ private fun serverHeartbeat(): () -> Unit {
 
         if (!net.active()) {
             // pls kys, heartbeat scheduler
-            Log.debug("Stopping scheduler.")
-            Log.warn("Heartbeat scheduler is still beating, but net is inactive. Assuming improper exit, the heartbeat" +
-                    " scheduler will be shut down.")
+            Log.warn("Net is inactive. Did the server crash? Stopping heartbeat scheduler.")
             stopHeartbeatScheduler()
-
-            exitProcess(0)
         }
 
         val server = database!!.server().find(configServerIP.string(), Administration.Config.port.num())

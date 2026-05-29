@@ -2,11 +2,9 @@ package net.ddns.mindustry.database.plugin
 
 import arc.Events
 import arc.util.Log
-import mindustry.core.GameState
 import mindustry.game.EventType.PlayerConnect
 import mindustry.game.EventType.PlayerLeave
 import mindustry.game.EventType.PlayEvent
-import mindustry.game.EventType.StateChangeEvent
 import mindustry.game.EventType.TapEvent
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
@@ -21,6 +19,7 @@ import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.commands.client.unprivileged.History
 import net.ddns.mindustry.database.plugin.configs.PluginConfigs.Configs.configServerIP
 import net.ddns.mindustry.database.plugin.events.PlayerLogin
+import net.ddns.mindustry.database.plugin.events.ServerExit
 import net.ddns.mindustry.database.schema.enums.PunishmentType
 import net.ddns.mindustry.database.schema.tables.pojos.Account
 import net.ddns.mindustry.database.schema.tables.pojos.Warn
@@ -32,7 +31,7 @@ fun loadMindustryEvents() {
 
     Events.on(PlayerLeave::class.java) {e -> playerLeave(e)}
     Events.on(PlayEvent::class.java) {_ -> startHeartbeatScheduler()}
-    Events.on(StateChangeEvent::class.java) {e -> gameOver(e)}
+    Events.on(ServerExit::class.java) { _ -> stopHeartbeatScheduler()}
 
     Events.on(TapEvent::class.java) {e -> tileTapped(e)}
     Events.on(WorldLoadEvent::class.java) {_ -> TileHistoryStore.clear()}
@@ -213,17 +212,4 @@ private fun playerLeave(event: PlayerLeave) {
     val server = database!!.server().find(configServerIP.string(), port)
     database!!.serverAccount().leavesServer(account.get(), server.get())
     PlayerName.forget(event.player)
-}
-
-private fun gameOver(event: StateChangeEvent) {
-    Log.debug("State change detected")
-    Log.debug("New state: " + event.to.name)
-    Log.debug("Old state: " + event.from.name)
-
-    if (event.to == GameState.State.playing) {
-        return
-    }
-
-    Log.debug("Killing heartbeat scheduler due to non-playing state.")
-    stopHeartbeatScheduler()
 }

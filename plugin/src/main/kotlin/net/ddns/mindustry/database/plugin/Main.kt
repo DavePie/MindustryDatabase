@@ -1,5 +1,7 @@
 package net.ddns.mindustry.database.plugin
 
+import arc.ApplicationListener
+import arc.Core
 import arc.util.CommandHandler
 import arc.util.Log
 import mindustry.mod.Plugin
@@ -11,6 +13,7 @@ import net.ddns.mindustry.database.plugin.commands.server.permissions.BasePermis
 import net.ddns.mindustry.database.plugin.commands.server.roles.BaseRoleCommand
 import net.ddns.mindustry.database.plugin.configs.toml.loadToml
 import java.util.logging.LogManager
+import net.ddns.mindustry.database.plugin.AppListener
 
 @Suppress("unused")
 class Main : Plugin() {
@@ -33,6 +36,7 @@ class Main : Plugin() {
         LogManager.getLogManager().reset()
         // https://stackoverflow.com/a/5762502
         Log.info("\u001B[34mPowered by jOOQ.\u001B[0m")
+        Core.app.addListener(AppListener())
         loadMindustryEvents()
         loadChatFilters()
         loadActionFilters()
