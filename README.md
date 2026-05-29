@@ -15,7 +15,7 @@ A Mindustry plugin to store and modify player artifacts in a centralized databas
 ### Pre-requisites
 You only have to do this once, unless you intend on having multiple different databases. This will assume that you have
 a basic level of knowledge on how to set up computer systems.
-1. Download postgresql. Whichever way you do it is up to you, but it must be accessible by the database.
+1. Download postgresql. Whichever way you do it is up to you, but it must be accessible by the server.
 2. Git clone this repository.
 3. Navigate to the client directory, and create a new file called `jooq.properties`. Edit the file.
 4. Set the username/password, an example is provided below. Note that the `/mindustry_database` at the end is necessary.
@@ -34,22 +34,32 @@ password=R2V0IFBob3MnZA==
 3. Navigate to your server root directory
 4. Navigate to `[server root]/config/mods`
 5. Paste the `.jar`
-6. Start or restart the server
-7. Type in the respective config values for `ip`, `url`, `user`, and `password` via `config CONFIG PARAMETER`
+6. Navigation to `[server root]/config`
+7. Setup the `config.toml` (refer to [this example](#toml-example)) in the directory.
+8. Start the server
+9. Set up the value for `ip` via `update-ip [new-ip]`
    (Refer to the [Server Commands](#server) section for additional information about the commands (such as parameters))
-8. Restart the server.
-9. Register the server to the database via the `register-server` command.
-10. Add roles via the `add-role` command and grant them permissions via the `grant-permission` command.
-11. Grant roles to players via the `grant-role` command. *Note: the player must first be registered to the database.*
+10. Register the server to the database via the `register-server` command.
+11. Add roles via the `add-role` command and grant them permissions via the `grant-permission` command.
+12. Grant roles to players via the `grant-role` command. *Note: the player must first be registered to the database.*
 
 # Configurations
-- `server-ip` - The IP of the Mindustry server. This is optional and should only be changed when necessary. Default is
-`127.0.0.1`. This shouldn't be changed directly unless you know what you're doing. Change this via the `update-ip`
-command.
+## Toml
 - `url` - The URL of the database.
 - `user` - The database user to authenticate as.
 - `password` - The password of the database user. This is recommended, and it'll be best to use a randomized and secure
-password.
+  password.
+### Toml Example
+```toml
+url = "192.168.255.10"
+username = "lett"
+password = "loremIpsumDolorSitAmet!!!!1"
+```
+
+## Built-in
+- `server-ip` - The IP of the Mindustry server. This is optional and should only be changed when necessary. Default is
+`127.0.0.1`. This shouldn't be changed directly unless you know what you're doing. Change this via the `update-ip`
+command.
 - `account-limit` - The maximum number of accounts that an individual player can create. Defaults to 5 accounts.
 - `session-duration` - The maximum duration of a player session. Defaults to 12 hours. If the session exceeds the
 maximum duration, then the user's session will become invalid when the user joins.
