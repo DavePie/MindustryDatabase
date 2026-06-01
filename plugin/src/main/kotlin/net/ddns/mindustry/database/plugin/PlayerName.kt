@@ -18,7 +18,7 @@ object PlayerName {
     private val states: MutableMap<String, State> = mutableMapOf()
 
     fun capture(player: Player) {
-        states.getOrPut(player.uuid()) { State(player.name()) }
+        states.getOrPut(player.uuid()) { State(player.coloredName()) }
     }
 
     fun setTag(player: Player, symbol: String?) {
