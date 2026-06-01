@@ -92,7 +92,7 @@ class Punish(handler: CommandHandler) : PrivilegedUiClientCommand(handler) {
             return;
         }
         if (hasPermission(permission.get(), player) == null) {
-            optionsMenu.showFollowup(player.con())
+            optionsMenu.show(player.con())
             return
         }
 
