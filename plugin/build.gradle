@@ -34,7 +34,7 @@ ext{
     //the build number that this plugin is made for
     mindustryVersion = 'v157.4'
     jabelVersion = "93fde537c7"
-    segment = "0.2.1"
+    segment = "8485e36167"
 }
 
 tasks.withType(Jar).configureEach {

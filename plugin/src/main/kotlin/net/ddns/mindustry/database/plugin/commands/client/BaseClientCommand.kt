@@ -4,11 +4,30 @@ import arc.util.CommandHandler
 import arc.util.Log
 import mindustry.gen.Player
 import mindustry.net.Packets
+import net.ddns.mindustry.database.plugin.Main.Companion.database
 import net.ddns.mindustry.database.plugin.commands.BaseCommand
+import net.ddns.mindustry.database.schema.tables.pojos.Account
+import net.ddns.mindustry.database.schema.tables.pojos.Permission
 
 abstract class BaseClientCommand(handler: CommandHandler) : BaseCommand(handler) {
     companion object {
         var playerLastAttempts: PlayerCommandAttempts = PlayerCommandAttempts()
+
+        fun playerHasPermission(permission: Permission, player: Player): Account? {
+            val account = database!!.account().find(player.ip(), player.uuid())
+
+            if (account.isEmpty) {
+                player.sendMessage("[scarlet]Your account could not be found.")
+                return null
+            }
+
+            if (!database!!.role().hasPermissions(account.get(), permission)) {
+                player.sendMessage("[scarlet]You do not have permission to run this command.")
+                return null
+            }
+
+            return account.get()
+        }
     }
 
     init {
@@ -21,6 +40,13 @@ abstract class BaseClientCommand(handler: CommandHandler) : BaseCommand(handler)
             handler.register(commandName, parameters, description) { arguments: Array<String>, player: Player ->
                 clientRunner(arguments, player) }
         }
+    }
+
+    /** Checks whether a player has a permission. Returns null if the player doesn't have the permission and returns the
+     *  player's account if they do have the permission.
+    */
+    fun hasPermission(permission: Permission, player: Player): Account? {
+        return playerHasPermission(permission, player)
     }
 
     /** Purges offline players to ensure memory usage isn't too much */

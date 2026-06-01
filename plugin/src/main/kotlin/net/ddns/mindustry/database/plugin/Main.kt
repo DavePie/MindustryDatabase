@@ -14,6 +14,7 @@ import net.ddns.mindustry.database.plugin.commands.server.roles.BaseRoleCommand
 import net.ddns.mindustry.database.plugin.configs.toml.loadToml
 import java.util.logging.LogManager
 import net.ddns.mindustry.database.plugin.AppListener
+import net.ddns.mindustry.database.plugin.commands.client.privileged.ui.PrivilegedUiClientCommand
 
 @Suppress("unused")
 class Main : Plugin() {
@@ -25,6 +26,7 @@ class Main : Plugin() {
         var database: Database? = null
         var unprivilegedClientCommands = UnprivilegedClientCommand::class.sealedSubclasses
         var privilegedClientCommands = PrivilegedClientCommand::class.sealedSubclasses
+        var privilegedUiCommands = PrivilegedUiClientCommand::class.sealedSubclasses
 
         var serverCommands = ServerCommand::class.sealedSubclasses
         var roleCommands = BaseRoleCommand::class.sealedSubclasses
@@ -58,6 +60,7 @@ class Main : Plugin() {
     override fun registerClientCommands(handler: CommandHandler) {
         registerCommands(unprivilegedClientCommands, handler)
         registerCommands(privilegedClientCommands, handler)
+        registerCommands(privilegedUiCommands, handler)
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
