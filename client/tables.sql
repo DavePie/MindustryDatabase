@@ -302,6 +302,7 @@ CREATE TABLE IF NOT EXISTS role_permission(
 );
 
 CREATE TABLE IF NOT EXISTS punishment_queue(
+
     id            SERIAL          PRIMARY KEY,
     type          punishment_type NOT NULL,
     creation_date TIMESTAMPTZ     NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Used for the automatic cleanup.
@@ -310,6 +311,7 @@ CREATE TABLE IF NOT EXISTS punishment_queue(
     warn_id       INT             NULL UNIQUE,
     kick_id       INT             NULL UNIQUE,
     mute_id       INT             NULL UNIQUE,
+
     CONSTRAINT fk_ban_queue  FOREIGN KEY(ban_id ) REFERENCES ban (id) ON DELETE CASCADE,
     CONSTRAINT fk_warn_queue FOREIGN KEY(warn_id) REFERENCES warn(id) ON DELETE CASCADE,
     CONSTRAINT fk_kick_queue FOREIGN KEY(kick_id) REFERENCES kick(id) ON DELETE CASCADE,
@@ -320,17 +322,23 @@ CREATE TABLE IF NOT EXISTS punishment_queue(
 -- So the best strategy is to let the server acknowledge the queue so it knows it has already handled the row.
 -- Then after all servers had enough time to read the queue, I can remove the old elements from the queue.
 CREATE TABLE IF NOT EXISTS punishment_acknowledge(
-    queue_id  INT PRIMARY KEY,
+
+    id        INT PRIMARY KEY,
+    queue_id  INT NOT NULL,
     server_id INT NOT NULL,
-    CONSTRAINT fk_punishment_queue FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
-    CONSTRAINT fk_server_ack       FOREIGN KEY(server_id) REFERENCES server(id)           ON DELETE CASCADE
+
+    CONSTRAINT fk_punishment_queue      FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
+    CONSTRAINT fk_server_ack            FOREIGN KEY(server_id) REFERENCES server(id)           ON DELETE CASCADE,
+    CONSTRAINT u_punishment_acknowledge UNIQUE(queue_id, server_id)
 );
 
 CREATE TABLE IF NOT EXISTS configuration(
+
     id        SERIAL PRIMARY KEY,
     key       TEXT   NOT NULL,
     server_id INT    NULL DEFAULT NULL, -- For server-specific configuration, for global configuration null should be used.
     value     JSONB  NOT NULL,
+
     CONSTRAINT fk_server_config    FOREIGN KEY(server_id) REFERENCES server(id) ON DELETE CASCADE,
     CONSTRAINT u_key_server_config UNIQUE NULLS NOT DISTINCT(key, server_id)
 );
