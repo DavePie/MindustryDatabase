@@ -323,9 +323,9 @@ CREATE TABLE IF NOT EXISTS punishment_queue(
 -- Then after all servers had enough time to read the queue, I can remove the old elements from the queue.
 CREATE TABLE IF NOT EXISTS punishment_acknowledge(
 
-    id        INT PRIMARY KEY,
-    queue_id  INT NOT NULL,
-    server_id INT NOT NULL,
+    id        SERIAL PRIMARY KEY,
+    queue_id  INT    NOT NULL,
+    server_id INT    NOT NULL,
 
     CONSTRAINT fk_punishment_queue      FOREIGN KEY(queue_id ) REFERENCES punishment_queue(id) ON DELETE CASCADE,
     CONSTRAINT fk_server_ack            FOREIGN KEY(server_id) REFERENCES server(id)           ON DELETE CASCADE,
