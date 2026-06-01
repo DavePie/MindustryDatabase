@@ -98,17 +98,10 @@ object PunishFlow {
     }
 
     private fun reasonGiven(staff: Player, child: Child) {
-        if (child !is BaseTextInput) return
-        if (child.text.isNullOrEmpty()) {
-            if (child.text != null) {
-                Call.infoMessage(staff.con(), "[yellow]Cannot have an empty reason.")
-                reasonInput!!.show(staff.con())
-            }
-            return
-        }
+        val reason = requireText(staff, child, reasonInput!!, "[yellow]Cannot have an empty reason.") ?: return
 
         val builder = builders[staff] ?: return
-        builder.reason = child.text
+        builder.reason = reason
 
         if (builder.punishmentType == "ban") {
             durationInput!!.show(staff.con())
@@ -120,18 +113,11 @@ object PunishFlow {
     }
 
     private fun gotDuration(staff: Player, child: Child) {
-        if (child !is BaseTextInput) return
-        if (child.text.isNullOrEmpty()) {
-            if (child.text != null) {
-                Call.infoMessage(staff.con(), "[yellow]Cannot have an empty duration.")
-                durationInput!!.show(staff.con())
-            }
-            return
-        }
+        val text = requireText(staff, child, durationInput!!, "[yellow]Cannot have an empty duration.") ?: return
 
         val builder = builders[staff] ?: return
         val duration = try {
-            Duration.parse(child.text!!)
+            Duration.parse(text)
         } catch (_: IllegalArgumentException) {
             Call.infoMessage(staff.con(), "[scarlet]Must have a valid duration.")
             durationInput!!.show(staff.con())
@@ -141,6 +127,21 @@ object PunishFlow {
         builder.duration = duration.toJavaDuration()
         builder.execute()
         builders.remove(staff)
+    }
+
+    /** Reads the submitted text, re-prompting (with [emptyMessage]) when it's blank. Returns null if not yet given. */
+    private fun requireText(staff: Player, child: Child, input: BaseTextInput, emptyMessage: String): String? {
+        if (child !is BaseTextInput) return null
+
+        val text = child.text
+        if (text.isNullOrEmpty()) {
+            if (text != null) {
+                Call.infoMessage(staff.con(), emptyMessage)
+                input.show(staff.con())
+            }
+            return null
+        }
+        return text
     }
 
     /** Quiet permission check (no player messages) so the "any of" gate at entry doesn't spam denials. */
