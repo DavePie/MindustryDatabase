@@ -358,10 +358,12 @@ public record PunishmentQueriesImpl(DatabaseImpl database) implements Punishment
             tDsl.delete(PUNISHMENT_QUEUE)
                     .where(PUNISHMENT_QUEUE.CREATION_DATE.lessOrEqual(deleteRange))
                     .execute();
-
+            // I select all the punishments on the queue that do not have an acknowledgement from this server.
             final var results = tDsl.select(PUNISHMENT_QUEUE)
                     .from(PUNISHMENT_QUEUE)
-                    .leftOuterJoin(PUNISHMENT_ACKNOWLEDGE).on(PUNISHMENT_QUEUE.ID.eq(PUNISHMENT_ACKNOWLEDGE.QUEUE_ID))
+                    .leftOuterJoin(PUNISHMENT_ACKNOWLEDGE)
+                    .on(PUNISHMENT_QUEUE.ID.eq(PUNISHMENT_ACKNOWLEDGE.QUEUE_ID)
+                            .and(PUNISHMENT_ACKNOWLEDGE.SERVER_ID.eq(server.id())))
                     .where(PUNISHMENT_QUEUE.TYPE.eq(type).and(PUNISHMENT_ACKNOWLEDGE.QUEUE_ID.isNull()))
                     .fetchInto(PunishmentQueue.class);
             if (results.isEmpty()) return List.of(); // Nothing to acknowledge.
