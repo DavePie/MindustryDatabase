@@ -19,7 +19,7 @@ fun PrivilegedClientCommand.preparePunishment(
     player: Player,
     permission: Permission,
     type: String,
-    minArgs: Int,
+    expectedArgs: Int,
     usage: String,
 ): Pair<Issuer, Account>? {
     val issuerAccount = hasPermission(permission, player) ?: return null
@@ -28,7 +28,7 @@ fun PrivilegedClientCommand.preparePunishment(
         PunishFlow.start(player, type)
         return null
     }
-    if (arguments.size < minArgs) {
+    if (arguments.size != expectedArgs) {
         player.sendMessage(usage)
         return null
     }

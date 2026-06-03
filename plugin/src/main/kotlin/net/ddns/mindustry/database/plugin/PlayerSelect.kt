@@ -29,9 +29,7 @@ object PlayerSelect {
 
         val options = targets.map { arrayOf(it.coloredName()) }.toTypedArray()
 
-        lateinit var menu: BaseMenu
-        menu = menuHandler.addMenu(title, message, options, callback@ { _: Player, child: Child ->
-            menuHandler.removeChild(menu.id)
+        val menu = menuHandler.addMenu(title, message, options, callback@ { _: Player, child: Child ->
             if (child !is BaseMenu) return@callback
             val picked = targets.getOrNull(child.option) ?: return@callback
 

@@ -29,17 +29,15 @@ object PunishFlow {
     private val actionOptions = arrayOf(arrayOf("Ban", "Kick", "Warn"))
     private val builders: MutableMap<Player, PunishmentBuilder> = mutableMapOf()
 
-    private var actionMenu: BaseMenu? = null
-    private var reasonInput: BaseTextInput? = null
-    private var durationInput: BaseTextInput? = null
-
-    private fun ensureRegistered() {
-        if (actionMenu != null) return
-
-        actionMenu = menuHandler.addMenu("[gold]Punish UI", "Select an action.", actionOptions, ::actionSelected, true)
-        reasonInput = textInputHandler.addTextInput(
+    private val actionMenu: BaseMenu by lazy {
+        menuHandler.addMenu("[gold]Punish UI", "Select an action.", actionOptions, ::actionSelected, true)
+    }
+    private val reasonInput: BaseTextInput by lazy {
+        textInputHandler.addTextInput(
             "[gold]Punish UI", "Why are you taking action against this person?", ::reasonGiven, 200, persist = true)
-        durationInput = textInputHandler.addTextInput(
+    }
+    private val durationInput: BaseTextInput by lazy {
+        textInputHandler.addTextInput(
             "[gold]Punish UI", "How long should the ban last? (ex: 365d)", ::gotDuration, 5, persist = true)
     }
 
@@ -48,8 +46,6 @@ object PunishFlow {
      * caller already knows them. Anything left null is prompted for interactively.
      */
     fun start(staff: Player, presetType: String? = null, presetTarget: Account? = null) {
-        ensureRegistered()
-
         val allowed = if (presetType != null) hasPermission(staff, presetType.lowercase())
                       else actionOptions[0].any { hasPermission(staff, it.lowercase()) }
         if (!allowed) {
@@ -69,9 +65,9 @@ object PunishFlow {
         val builder = builders[staff] ?: return
 
         when {
-            builder.punishmentType == null -> actionMenu!!.show(staff.con())
+            builder.punishmentType == null -> actionMenu.show(staff.con())
             builder.target == null -> selectPlayer(staff)
-            else -> reasonInput!!.show(staff.con())
+            else -> reasonInput.show(staff.con())
         }
     }
 
@@ -80,7 +76,7 @@ object PunishFlow {
 
         val type = actionOptions[0][child.option].lowercase()
         if (!hasPermission(staff, type)) {
-            actionMenu!!.show(staff.con())
+            actionMenu.show(staff.con())
             return
         }
 
@@ -98,13 +94,13 @@ object PunishFlow {
     }
 
     private fun reasonGiven(staff: Player, child: Child) {
-        val reason = requireText(staff, child, reasonInput!!, "[yellow]Cannot have an empty reason.") ?: return
+        val reason = requireText(staff, child, reasonInput, "[yellow]Cannot have an empty reason.") ?: return
 
         val builder = builders[staff] ?: return
         builder.reason = reason
 
         if (builder.punishmentType == "ban") {
-            durationInput!!.show(staff.con())
+            durationInput.show(staff.con())
             return
         }
 
@@ -113,14 +109,14 @@ object PunishFlow {
     }
 
     private fun gotDuration(staff: Player, child: Child) {
-        val text = requireText(staff, child, durationInput!!, "[yellow]Cannot have an empty duration.") ?: return
+        val text = requireText(staff, child, durationInput, "[yellow]Cannot have an empty duration.") ?: return
 
         val builder = builders[staff] ?: return
         val duration = try {
             Duration.parse(text)
         } catch (_: IllegalArgumentException) {
             Call.infoMessage(staff.con(), "[scarlet]Must have a valid duration.")
-            durationInput!!.show(staff.con())
+            durationInput.show(staff.con())
             return
         }
 
